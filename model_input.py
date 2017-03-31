@@ -10,7 +10,7 @@ def get_feature_columns(mode):
     if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
         # During training we have a label feature
         feature_columns.append(tf.contrib.layers.real_valued_column(
-            column_name="label", dimension=1, dtype=tf.int64))
+            column_name="label", dimension=2, dtype=tf.int64))
 
     return set(feature_columns)
 
@@ -32,10 +32,10 @@ def create_input_fn(mode, input_files, batch_size, num_epochs):
         # This is an ugly hack because of a current bug in tf.learn
         # During evaluation TF tries to restore the epoch variable which isn't defined during training
         # So we define the variable manually here
-        if mode == tf.contrib.learn.ModeKeys.TRAIN:
-            tf.get_variable(
-                "read_batch_features_eval/file_name_queue/limit_epochs/epochs",
-                initializer=tf.constant(0, dtype=tf.int64))
+        # if mode == tf.contrib.learn.ModeKeys.TRAIN:
+        #     tf.get_variable(
+        #         "read_batch_features_eval/file_name_queue/limit_epochs/epochs",
+        #         initializer=tf.constant(0, dtype=tf.int64))
 
         if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
             target = feature_map.pop("label")

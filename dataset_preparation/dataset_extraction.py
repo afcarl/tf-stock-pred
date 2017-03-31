@@ -9,14 +9,11 @@ companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_ba
 
 header_names = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Split Ratio', 'Close-1', 'Open-1', 'Low-1', 'High-1', 'Volume-1', 'Split Ratio-1', 'Close-2', 'Open-2', 'Low-2', 'High-2', 'Volume-2', 'Split Ratio-2', 'Close-3', 'Open-3', 'Low-3', 'High-3', 'Volume-3', 'Split Ratio-3', 'Close-4', 'Open-4', 'Low-4', 'High-4', 'Volume-4', 'Split Ratio-4', 'Close-5', 'Open-5', 'Low-5', 'High-5', 'Volume-5', 'Split Ratio-5', 'Close-6', 'Open-6', 'Low-6', 'High-6', 'Volume-6', 'Split Ratio-6', 'Close-7', 'Open-7', 'Low-7', 'High-7', 'Volume-7', 'Split Ratio-7', 'Close-8', 'Open-8', 'Low-8', 'High-8', 'Volume-8', 'Split Ratio-8', 'Close-9', 'Open-9', 'Low-9', 'High-9', 'Volume-9', 'Split Ratio-9', 'Close-10', 'Open-10', 'Low-10', 'High-10', 'Volume-10', 'Split Ratio-10', 'Close-11', 'Open-11', 'Low-11', 'High-11', 'Volume-11', 'Split Ratio-11', 'Close-12', 'Open-12', 'Low-12', 'High-12', 'Volume-12', 'Split Ratio-12', 'Close-13', 'Open-13', 'Low-13', 'High-13', 'Volume-13', 'Split Ratio-13', 'Close-14', 'Open-14', 'Low-14', 'High-14', 'Volume-14', 'Split Ratio-14', 'Close-15', 'Open-15', 'Low-15', 'High-15', 'Volume-15', 'Split Ratio-15', 'Close-16', 'Open-16', 'Low-16', 'High-16', 'Volume-16', 'Split Ratio-16', 'Close-17', 'Open-17', 'Low-17', 'High-17', 'Volume-17', 'Split Ratio-17', 'Close-18', 'Open-18', 'Low-18', 'High-18', 'Volume-18', 'Split Ratio-18', 'Close-19', 'Open-19', 'Low-19', 'High-19', 'Volume-19', 'Split Ratio-19', 'Close+1']
 
-tf.flags.DEFINE_string("input_dir", "../data/stock", "Directory containing input data files")
-tf.flags.DEFINE_string("output_dir", "../data", "Directory containing output")
-tf.flags.DEFINE_integer('batch_size', 30, 'size of the inputs batch')
-tf.flags.DEFINE_integer('split_size', 450, 'size of each split')
-tf.flags.DEFINE_float('train_cf', 4.5, 'coefficient of training size')
-tf.flags.DEFINE_float('valid_cf', 1., 'coefficient of validation size')
-
-FLAGS = tf.flags.FLAGS
+INPUT_DIR = "../data/stock"
+OUTPUT_DIR = "../data"
+SPLIT_SIZE = 450
+TRAIN_CF = 4.5
+VALID_CF = 1.
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """
@@ -42,7 +39,10 @@ def create_example(features, label):
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
     example = tf.train.Example()
-    example.features.feature["label"].int64_list.value.append(int(label))
+    target = np.zeros(2, dtype=np.int32)
+    target[int(label)] = 1
+
+    example.features.feature["label"].int64_list.value.extend(target)
     example.features.feature["features"].float_list.value.extend(features)
     return example
     # write the new example
@@ -82,21 +82,21 @@ def run(file_name, path = '../data/stock'):
     full_path = os.path.join(path, file_name) + '-fea.csv'
     data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
 
-    train, valid, test = split_train_valid_test(data, FLAGS.split_size, FLAGS.train_cf, FLAGS.valid_cf)
+    train, valid, test = split_train_valid_test(data, SPLIT_SIZE, TRAIN_CF, VALID_CF)
 
 
     create_tfrecords_file(
         input=train,
         output_file_name="train.tfrecords",
         example_fn=create_example,
-        path=os.path.join(FLAGS.output_dir, file_name))
+        path=os.path.join(OUTPUT_DIR, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
         output_file_name="test.tfrecords",
         example_fn=create_example,
-        path=os.path.join(FLAGS.output_dir, file_name)
+        path=os.path.join(OUTPUT_DIR, file_name)
     )
 
     # Create train.tfrecords
@@ -104,7 +104,7 @@ def run(file_name, path = '../data/stock'):
         input=valid,
         output_file_name="valid.tfrecords",
         example_fn=create_example,
-        path=os.path.join(FLAGS.output_dir, file_name)
+        path=os.path.join(OUTPUT_DIR, file_name)
     )
 
 if __name__ == "__main__":

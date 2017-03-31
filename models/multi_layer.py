@@ -22,6 +22,9 @@ def multilayer_perceptron(hparams, mode, feature, target):
             activation = tf.add(tf.matmul(logits, W), b)
             l_output = tf.nn.relu(activation)
             logits = l_output
+            tf.summary.histogram('ml_{}_W'.format(layer_idx), W)
+            tf.summary.histogram('ml_{}_b'.format(layer_idx), b)
+            tf.summary.histogram('ml_{}_output'.format(layer_idx), l_output)
 
     with tf.variable_scope('softmax_linear')as vs:
         W = tf.get_variable('W', shape=[hparams.h_layer_size[-1], 2],
@@ -32,6 +35,10 @@ def multilayer_perceptron(hparams, mode, feature, target):
 
         logits = tf.add(tf.matmul(logits, W), b)
         probs = tf.sigmoid(logits)
+
+        tf.summary.histogram('softmax_linear_W', W)
+        tf.summary.histogram('softmax_linear_b', b)
+        tf.summary.histogram('softmax_linear_output', logits)
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
             return probs, None
