@@ -4,8 +4,10 @@ import numpy as np
 import os
 import pandas as pd
 
-companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
-                 'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
+# companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
+#                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
+
+companies = ['IBM']
 
 header_names = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume', 'Split Ratio', 'Close-1', 'Open-1', 'Low-1', 'High-1', 'Volume-1', 'Split Ratio-1', 'Close-2', 'Open-2', 'Low-2', 'High-2', 'Volume-2', 'Split Ratio-2', 'Close-3', 'Open-3', 'Low-3', 'High-3', 'Volume-3', 'Split Ratio-3', 'Close-4', 'Open-4', 'Low-4', 'High-4', 'Volume-4', 'Split Ratio-4', 'Close-5', 'Open-5', 'Low-5', 'High-5', 'Volume-5', 'Split Ratio-5', 'Close-6', 'Open-6', 'Low-6', 'High-6', 'Volume-6', 'Split Ratio-6', 'Close-7', 'Open-7', 'Low-7', 'High-7', 'Volume-7', 'Split Ratio-7', 'Close-8', 'Open-8', 'Low-8', 'High-8', 'Volume-8', 'Split Ratio-8', 'Close-9', 'Open-9', 'Low-9', 'High-9', 'Volume-9', 'Split Ratio-9', 'Close-10', 'Open-10', 'Low-10', 'High-10', 'Volume-10', 'Split Ratio-10', 'Close-11', 'Open-11', 'Low-11', 'High-11', 'Volume-11', 'Split Ratio-11', 'Close-12', 'Open-12', 'Low-12', 'High-12', 'Volume-12', 'Split Ratio-12', 'Close-13', 'Open-13', 'Low-13', 'High-13', 'Volume-13', 'Split Ratio-13', 'Close-14', 'Open-14', 'Low-14', 'High-14', 'Volume-14', 'Split Ratio-14', 'Close-15', 'Open-15', 'Low-15', 'High-15', 'Volume-15', 'Split Ratio-15', 'Close-16', 'Open-16', 'Low-16', 'High-16', 'Volume-16', 'Split Ratio-16', 'Close-17', 'Open-17', 'Low-17', 'High-17', 'Volume-17', 'Split Ratio-17', 'Close-18', 'Open-18', 'Low-18', 'High-18', 'Volume-18', 'Split Ratio-18', 'Close-19', 'Open-19', 'Low-19', 'High-19', 'Volume-19', 'Split Ratio-19', 'Close+1']
 
@@ -80,7 +82,12 @@ def run(file_name, path = '../data/stock'):
 
 
     full_path = os.path.join(path, file_name) + '-fea.csv'
-    data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
+    if file_name == 'IBM':
+        data = pd.read_csv(full_path, parse_dates=True, index_col=0)
+        VALID_CF = 85
+        TRAIN_CF = 2666
+    else:
+        data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
 
     train, valid, test = split_train_valid_test(data, SPLIT_SIZE, TRAIN_CF, VALID_CF)
 
@@ -108,4 +115,4 @@ def run(file_name, path = '../data/stock'):
     )
 
 if __name__ == "__main__":
-    run('apple')
+    run('IBM')
