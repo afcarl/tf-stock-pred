@@ -1,17 +1,16 @@
 import tensorflow as tf
+import net_hparams
 
-FEATURE_SIZE = 120
-
+hparams = net_hparams.create_hparams()
 def get_feature_columns(mode):
     feature_columns = []
     feature_columns.append(tf.contrib.layers.real_valued_column(
-        column_name="features", dimension=FEATURE_SIZE, dtype=tf.float32))
+        column_name="features", dimension=hparams.input_size, dtype=tf.float32))
 
     if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
         # During training we have a label feature
         feature_columns.append(tf.contrib.layers.real_valued_column(
-            column_name="label", dimension=2, dtype=tf.int64))
-
+            column_name="label", dimension=hparams.num_class, dtype=tf.int64))
     return set(feature_columns)
 
 
@@ -24,9 +23,9 @@ def create_input_fn(mode, input_files, batch_size, num_epochs):
             batch_size=batch_size,
             features=features,
             reader=tf.TFRecordReader,
-            randomize_input=False,
+            randomize_input=True,
             num_epochs=num_epochs,
-            queue_capacity=200000 + batch_size * 10,
+            # queue_capacity=10 + batch_size * 10,
             name="read_batch_features_{}".format(mode))
 
         # This is an ugly hack because of a current bug in tf.learn

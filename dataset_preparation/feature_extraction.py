@@ -29,12 +29,20 @@ def run(path_conf):
 
         print("extract feature of %s" % company_name)
 
+        data = ef.compute_return(data)
+
         for i in range(1, 20):
             data.insert(len(data.keys()), 'Close-{}'.format(i), ef.compute_delay(data['Close'], i))
             data.insert(len(data.keys()), 'Open-{}'.format(i), ef.compute_delay(data['Open'], i))
             data.insert(len(data.keys()), 'Low-{}'.format(i), ef.compute_delay(data['Low'], i))
             data.insert(len(data.keys()), "High-{}".format(i), ef.compute_delay(data['High'], i))
             data.insert(len(data.keys()), "Volume-{}".format(i), ef.compute_delay(data['Volume'], i))
+            data.insert(len(data.keys()), "Adj_Close-{}".format(i), ef.compute_delay(data['Adj_Close'], i))
+            data.insert(len(data.keys()), "Adj_Open-{}".format(i), ef.compute_delay(data['Adj_Open'], i))
+            data.insert(len(data.keys()), "Adj_Low-{}".format(i), ef.compute_delay(data['Adj_Low'], i))
+            data.insert(len(data.keys()), "Adj_High-{}".format(i), ef.compute_delay(data['Adj_High'], i))
+            data.insert(len(data.keys()), "Adj_Volume-{}".format(i), ef.compute_delay(data['Adj_Volume'], i))
+
 
         data.insert(len(data.keys()), 'Close+1', ef.predict_value(data['Close']))
 

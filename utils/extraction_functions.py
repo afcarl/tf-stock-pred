@@ -45,3 +45,13 @@ def check_data(data):
     if data.isnull().any().any():
         print(data.isnull().any())
         raise Exception("Error in the input values")
+
+def compute_return(data):
+    '''
+    compute the return difference
+    :param data: 
+    :return: 
+    '''
+    shifted_data = data.shift(1)
+    data = (data - shifted_data)/shifted_data
+    return data

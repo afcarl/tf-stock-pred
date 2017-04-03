@@ -1,6 +1,6 @@
 import tensorflow as tf
-from utils.eval_metric import create_evaluation_metrics
 from tensorflow.contrib.learn.python.learn.estimators import model_fn as model_fn_lib
+import utils.eval_metric as eval_m
 
 def create_train_op(loss, hparams):
     '''
@@ -20,6 +20,7 @@ def create_train_op(loss, hparams):
 
 
 def create_model_fn(hparams, model_impl):
+    eval_metric_ops = eval_m.create_evaluation_metrics()
     '''
     Function used to create the model according different implementations and usage mode
     :param hparams: hiper-parameters used to configure the model
@@ -35,9 +36,15 @@ def create_model_fn(hparams, model_impl):
                 feature,
                 target)
             train_op = create_train_op(loss, hparams)
-            tf.summary.scalar('train_loss', loss)
 
-            return probs, loss, train_op
+            # tf.summary.scalar('train_loss', loss)
+            # tf.summary.scalar('train_accuracy',
+            #                   tf.contrib.metrics.accuracy(tf.argmax(probs, axis=1), tf.argmax(target, axis=1)))
+            # stram_accuracy = tf.contrib.metrics.streaming_accuracy(probs, target)
+            # tf.summary.scalar('train_stream_accuracy', stram_accuracy[0])
+            # tf.summary.scalar('train_stream_accuracy_up', stram_accuracy[1])
+            ret = tf.contrib.learn.ModelFnOps(mode, probs, loss, train_op, eval_metric_ops)
+            return ret
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
             probs, loss = model_impl(
@@ -45,7 +52,8 @@ def create_model_fn(hparams, model_impl):
                 mode,
                 feature,
                 None)
-            return probs, 0.0, None
+            ret = tf.contrib.learn.ModelFnOps(mode, probs, 0.0)
+            return ret
 
         if mode == tf.contrib.learn.ModeKeys.EVAL:
             probs, loss = model_impl(
@@ -54,11 +62,6 @@ def create_model_fn(hparams, model_impl):
                 feature,
                 target)
 
-            # Add summaries
-            tf.summary.histogram("eval_correct_probs_hist", probs[0])
-            tf.summary.scalar("eval_correct_probs_average", tf.reduce_mean(probs[0]))
-            tf.summary.histogram("eval_incorrect_probs_hist", probs[1])
-            tf.summary.scalar("eval_incorrect_probs_average", tf.reduce_mean(probs[1]))
-
-            return probs, loss, None
+            ret = tf.contrib.learn.ModelFnOps(mode, probs, loss, None, eval_metric_ops)
+            return ret
     return model_fn

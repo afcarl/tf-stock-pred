@@ -27,14 +27,14 @@ def multilayer_perceptron(hparams, mode, feature, target):
             tf.summary.histogram('ml_{}_output'.format(layer_idx), l_output)
 
     with tf.variable_scope('softmax_linear')as vs:
-        W = tf.get_variable('W', shape=[hparams.h_layer_size[-1], 2],
+        W = tf.get_variable('W', shape=[hparams.h_layer_size[-1], hparams.num_class],
                                 initializer=tf.truncated_normal_initializer())
 
-        b = tf.get_variable('b', shape=[2],
+        b = tf.get_variable('b', shape=[hparams.num_class],
                             initializer=tf.truncated_normal_initializer())
 
         logits = tf.add(tf.matmul(logits, W), b)
-        probs = tf.sigmoid(logits)
+        probs = tf.nn.softmax(logits)
 
         tf.summary.histogram('softmax_linear_W', W)
         tf.summary.histogram('softmax_linear_b', b)
@@ -44,8 +44,8 @@ def multilayer_perceptron(hparams, mode, feature, target):
             return probs, None
 
         # Calculate the binary cross-entropy loss
-        # targets = tf.expand_dims(targets, 0)
-        losses = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=tf.to_float(target), name='entropy')
+        # target = tf.squeeze(target, 1)
+        losses = tf.nn.softmax_cross_entropy_with_logits(logits=logits, labels=target, name='entropy')
 
     mean_loss = tf.reduce_mean(losses, name='mean_loss')
     return probs, mean_loss

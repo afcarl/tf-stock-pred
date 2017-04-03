@@ -3,7 +3,8 @@ import functools
 import numpy as np
 import os
 import pandas as pd
-
+import sklearn.datasets as sd
+from sklearn.model_selection import train_test_split
 # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
 #                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
 
@@ -16,6 +17,7 @@ OUTPUT_DIR = "../data"
 SPLIT_SIZE = 450
 TRAIN_CF = 4.5
 VALID_CF = 1.
+NUM_CLASS = 2
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """
@@ -25,9 +27,12 @@ def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     writer = tf.python_io.TFRecordWriter(full_path)
     print("Creating TFRecords file at {}...".format(full_path))
-    for feas, (label_time, label_value) in zip(input[0].itertuples(), input[1].iteritems()):
-        assert feas[0] == label_time
-        x = example_fn(list(feas[1:]), label_value)
+    # for feas, (label_time, label_value) in zip(input[0].itertuples(), input[1].iteritems()):
+    #     assert feas[0] == label_time
+    #     x = example_fn(list(feas[1:]), label_value)
+    #     writer.write(x.SerializeToString())
+    for feature, target in zip(input[0], input[1]):
+        x = example_fn(feature, target)
         writer.write(x.SerializeToString())
 
     writer.close()
@@ -41,8 +46,9 @@ def create_example(features, label):
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
     example = tf.train.Example()
-    target = np.zeros(2, dtype=np.int32)
+    target = np.zeros(NUM_CLASS, dtype=np.int64)
     target[int(label)] = 1
+
 
     example.features.feature["label"].int64_list.value.extend(target)
     example.features.feature["features"].float_list.value.extend(features)
@@ -81,34 +87,53 @@ def split_train_valid_test(data, split, train_cff, valid_cff, experiment_type='c
 def run(file_name, path = '../data/stock'):
 
 
-    full_path = os.path.join(path, file_name) + '-fea.csv'
-    if file_name == 'IBM':
-        data = pd.read_csv(full_path, parse_dates=True, index_col=0)
-        VALID_CF = 85
-        TRAIN_CF = 2666
-    else:
-        data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
+    # full_path = os.path.join(path, file_name) + '-fea.csv'
+    # if file_name == 'IBM':
+    #     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
+    #     VALID_CF = 85
+    #     TRAIN_CF = 2666
+    # else:
+    #     data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
+    #
+    # train, valid, test = split_train_valid_test(data, SPLIT_SIZE, TRAIN_CF, VALID_CF)
+    #
+    # create_tfrecords_file(
+    #     input=train,
+    #     output_file_name="train.tfrecords",
+    #     example_fn=create_example,
+    #     path=os.path.join(OUTPUT_DIR, file_name))
+    #
+    # # Create test.tfrecords
+    # create_tfrecords_file(
+    #     input=test,
+    #     output_file_name="test.tfrecords",
+    #     example_fn=create_example,
+    #     path=os.path.join(OUTPUT_DIR, file_name)
+    # )
+    #
+    # # Create train.tfrecords
+    # create_tfrecords_file(
+    #     input=valid,
+    #     output_file_name="valid.tfrecords",
+    #     example_fn=create_example,
+    #     path=os.path.join(OUTPUT_DIR, file_name)
+    # )
 
-    train, valid, test = split_train_valid_test(data, SPLIT_SIZE, TRAIN_CF, VALID_CF)
+
+    dataset_iris = sd.load_iris()
+    X_train, X_test, y_train, y_test = train_test_split(dataset_iris.data, dataset_iris.target, test_size=0.4,
+                                                        random_state=0)
 
 
+    file_name = 'iris'
     create_tfrecords_file(
-        input=train,
+        input=(X_train, y_train),
         output_file_name="train.tfrecords",
         example_fn=create_example,
         path=os.path.join(OUTPUT_DIR, file_name))
 
-    # Create test.tfrecords
     create_tfrecords_file(
-        input=test,
-        output_file_name="test.tfrecords",
-        example_fn=create_example,
-        path=os.path.join(OUTPUT_DIR, file_name)
-    )
-
-    # Create train.tfrecords
-    create_tfrecords_file(
-        input=valid,
+        input=(X_test, y_test),
         output_file_name="valid.tfrecords",
         example_fn=create_example,
         path=os.path.join(OUTPUT_DIR, file_name)
