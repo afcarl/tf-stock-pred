@@ -14,11 +14,11 @@ HParams = namedtuple(
 
 def create_hparams():
     return HParams(
-        batch_size=10,
-        eval_batch_size=10,
-        optimizer="SGD",
-        learning_rate=0.1,
+        batch_size=50,
+        eval_batch_size=50,
+        optimizer="Adam",
+        learning_rate=0.005,
         h_layer_size=[10, 20, 10],
-        input_size=4,
-        num_class=3
+        input_size=200,
+        num_class=2
     )

@@ -18,6 +18,8 @@ def run(path_conf):
 
     path = '../data/stock'
 
+    experiment_type = 'classification'
+
     for company_name in ['IBM']:
         full_path = os.path.join(path, company_name) + '.csv'
 
@@ -29,7 +31,15 @@ def run(path_conf):
 
         print("extract feature of %s" % company_name)
 
+        if experiment_type == 'classification':
+            labels = ef.compute_label(data['Close'])
+        else:
+            labels = ef.compute_delay(data['Close'], -1)
+            labels = ef.compute_return(labels)
+
         data = ef.compute_return(data)
+
+        data.insert(len(data.keys()), 'Label', labels)
 
         for i in range(1, 20):
             data.insert(len(data.keys()), 'Close-{}'.format(i), ef.compute_delay(data['Close'], i))
@@ -42,13 +52,10 @@ def run(path_conf):
             data.insert(len(data.keys()), "Adj_Low-{}".format(i), ef.compute_delay(data['Adj_Low'], i))
             data.insert(len(data.keys()), "Adj_High-{}".format(i), ef.compute_delay(data['Adj_High'], i))
             data.insert(len(data.keys()), "Adj_Volume-{}".format(i), ef.compute_delay(data['Adj_Volume'], i))
-
-
-        data.insert(len(data.keys()), 'Close+1', ef.predict_value(data['Close']))
+            data.insert(len(data.keys()), 'Label-{}'.format(i), ef.compute_delay(data['Label'], i))
 
         # remove unused feature
-        # data = ef.remove_unused_key(data, remove_keys=['Adj_Close', 'Adj_Volume', 'Adj_High', 'Adj_Low', 'Adj_Open',
-        #                                                'Ex-Dividend'])
+        # data = ef.remove_unused_key(data, remove_keys=['Adj_Close', 'Adj_Volume', 'Adj_High', 'Adj_Low', 'Adj_Open', 'Ex-Dividend'])
 
         # truncate the data accordingly to the value specified
         start_date = pd.Timestamp(prop.get('DATE', 'start_time'))

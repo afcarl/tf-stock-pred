@@ -9,17 +9,17 @@ import net_hparams
 from models.multi_layer import multilayer_perceptron
 from utils.eval_metric import create_evaluation_metrics
 
-# tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
-# tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
-# tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
-# tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
-# FLAGS = tf.flags.FLAGS
+tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
+tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
+tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
+tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
+FLAGS = tf.flags.FLAGS
 
 TIMESTAMP = int(time.time())
 MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 
-COMPANY_NAME = 'iris'
+COMPANY_NAME = 'IBM'
 
 TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
 VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
@@ -40,7 +40,7 @@ def main(unused_argv):
         model_fn=model_fn,
         model_dir=MODEL_DIR,
         config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.5,
-                                          save_checkpoints_secs=5))
+                                          save_checkpoints_secs=50))
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,

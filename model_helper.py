@@ -27,41 +27,50 @@ def create_model_fn(hparams, model_impl):
     :param model_impl: implementation of the model used, have to use the same interface to inject a different model
     :return: probabilities of the predicted class, value of the loss function, operation to execute the training
     '''
-    def model_fn(feature, target, mode):
+    def model_fn(feature, targets, mode):
 
         if mode == tf.contrib.learn.ModeKeys.TRAIN:
-            probs, loss = model_impl(
+            predictions, loss = model_impl(
                 hparams,
                 mode,
                 feature,
-                target)
+                targets)
             train_op = create_train_op(loss, hparams)
 
-            # tf.summary.scalar('train_loss', loss)
-            # tf.summary.scalar('train_accuracy',
-            #                   tf.contrib.metrics.accuracy(tf.argmax(probs, axis=1), tf.argmax(target, axis=1)))
-            # stram_accuracy = tf.contrib.metrics.streaming_accuracy(probs, target)
-            # tf.summary.scalar('train_stream_accuracy', stram_accuracy[0])
-            # tf.summary.scalar('train_stream_accuracy_up', stram_accuracy[1])
-            ret = tf.contrib.learn.ModelFnOps(mode, probs, loss, train_op, eval_metric_ops)
-            return ret
+            return model_fn_lib.ModelFnOps(
+                mode=mode,
+                predictions=predictions,
+                loss=loss,
+                train_op=train_op
+            )
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
-            probs, loss = model_impl(
+            predictions, loss = model_impl(
                 hparams,
                 mode,
                 feature,
                 None)
-            ret = tf.contrib.learn.ModelFnOps(mode, probs, 0.0)
-            return ret
+
+            eval_metric_ops = {
+                "accuracy": tf.contrib.metrics.streaming_accuracy(predictions, targets)
+            }
+            return model_fn_lib.ModelFnOps(mode=mode,
+                                           predictions=predictions,
+                                           eval_metric_ops=eval_metric_ops)
 
         if mode == tf.contrib.learn.ModeKeys.EVAL:
-            probs, loss = model_impl(
+            predictions, loss = model_impl(
                 hparams,
                 mode,
                 feature,
-                target)
+                targets)
 
-            ret = tf.contrib.learn.ModelFnOps(mode, probs, loss, None, eval_metric_ops)
-            return ret
+            eval_metric_ops = {
+                "accuracy": tf.contrib.metrics.streaming_accuracy(predictions, targets)
+            }
+
+            return model_fn_lib.ModelFnOps(mode=mode,
+                                           predictions=predictions,
+                                           loss=loss,
+                                           eval_metric_ops=eval_metric_ops)
     return model_fn

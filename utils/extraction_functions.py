@@ -55,3 +55,20 @@ def compute_return(data):
     shifted_data = data.shift(1)
     data = (data - shifted_data)/shifted_data
     return data
+
+def compute_label(close_time_series):
+    '''
+    compute the classification label
+    :param data: 
+    :return: 
+    '''
+    close_time_series_shift = close_time_series.shift(1)
+    labels = close_time_series - close_time_series_shift
+
+    for time, value in labels.iteritems():
+        if value >= 0:
+            labels[time] = 1
+        else:
+            labels[time] = 0
+
+    return labels
