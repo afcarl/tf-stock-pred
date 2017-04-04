@@ -17,7 +17,6 @@ OUTPUT_DIR = "../data"
 SPLIT_SIZE = 450
 TRAIN_CF = 4.5
 VALID_CF = 1.
-NUM_CLASS = 2
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """
@@ -46,11 +45,9 @@ def create_example(features, label):
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
     example = tf.train.Example()
-    target = np.zeros(NUM_CLASS, dtype=np.int64)
-    target[int(label)] = 1
 
 
-    example.features.feature["label"].int64_list.value.extend(target)
+    example.features.feature["label"].int64_list.value.append(label)
     example.features.feature["features"].float_list.value.extend(features)
     return example
     # write the new example

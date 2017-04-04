@@ -2,17 +2,14 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import os
-import urllib
+
 import argparse
 import sys
-import tempfile
 import numpy as np
 import data_set_helper
 import tensorflow as tf
 
 from tensorflow.contrib.learn.python.learn.estimators import model_fn as model_fn_lib
-from tensorflow.contrib.learn.python.learn.metric_spec import MetricSpec
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -22,20 +19,27 @@ IRIS_TEST = "iris_test.csv"
 
 
 def model_fn(features, targets, mode, params):
-    first_hidden_layer = tf.contrib.layers.relu(features, 10)
+    with tf.variable_scope('layer_1') as vs:
+        first_hidden_layer = tf.contrib.layers.relu(features, 10)
 
+    with tf.variable_scope('layer_2') as vs:
     # Connect the second hidden layer to first hidden layer with relu
-    second_hidden_layer = tf.contrib.layers.relu(first_hidden_layer, 20)
+        second_hidden_layer = tf.contrib.layers.relu(first_hidden_layer, 20)
 
-    third_hidden_layer = tf.contrib.layers.relu(second_hidden_layer, 10)
+    with tf.variable_scope('layer_3') as vs:
+        third_hidden_layer = tf.contrib.layers.relu(second_hidden_layer, 10)
 
-    # Connect the output layer to second hidden layer (no activation fn)
-    output_layer = tf.contrib.layers.linear(third_hidden_layer, 3)
+    with tf.variable_scope('softmax') as vs:
+        # Connect the output layer to second hidden layer (no activation fn)
+        output_layer = tf.contrib.layers.linear(third_hidden_layer, 3)
 
-    prediction = tf.argmax(tf.nn.softmax(output_layer), 1)
-    loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output_layer, labels=targets, name='entropy'))
+        prediction = tf.argmax(tf.nn.softmax(output_layer), 1)
+        loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=output_layer, labels=targets, name='entropy'))
 
 
+    if mode == tf.contrib.learn.ModeKeys.TRAIN:
+        t_accuracy = tf.contrib.metrics.streaming_accuracy(prediction, targets)
+        tf.summary.scalar('train_accuracy', tf.reduce_mean(t_accuracy))
 
     eval_metric_ops = {
         "accuracy":tf.contrib.metrics.streaming_accuracy(prediction, targets )
@@ -55,100 +59,61 @@ def model_fn(features, targets, mode, params):
         eval_metric_ops=eval_metric_ops
     )
 
-def maybe_download(train_data, test_data, predict_data):
-    """Maybe downloads training data and returns train and test file names."""
-    if train_data:
-        train_file_name = train_data
-    else:
-        train_file = tempfile.NamedTemporaryFile(delete=False)
-        urllib.request.urlretrieve(
-            "http://download.tensorflow.org/data/abalone_train.csv",
-            train_file.name)
-        train_file_name = train_file.name
-        train_file.close()
-        print("Training data is downloaded to %s" % train_file_name)
-
-    if test_data:
-        test_file_name = test_data
-    else:
-        test_file = tempfile.NamedTemporaryFile(delete=False)
-        urllib.request.urlretrieve(
-            "http://download.tensorflow.org/data/abalone_test.csv", test_file.name)
-        test_file_name = test_file.name
-        test_file.close()
-        print("Test data is downloaded to %s" % test_file_name)
-
-    if predict_data:
-        predict_file_name = predict_data
-    else:
-        predict_file = tempfile.NamedTemporaryFile(delete=False)
-        urllib.request.urlretrieve(
-            "http://download.tensorflow.org/data/abalone_predict.csv",
-            predict_file.name)
-        predict_file_name = predict_file.name
-        predict_file.close()
-        print("Prediction data is downloaded to %s" % predict_file_name)
-    return train_file_name, test_file_name, predict_file_name
-
-
 def main(unused_argv):
 
-    # # Load datasets
-    # abalone_train, abalone_test, abalone_predict = maybe_download(FLAGS.train_data, FLAGS.test_data, FLAGS.predict_data)
-    #
-    # # Training examples
-    # training_set = tf.contrib.learn.datasets.base.load_csv_without_header(
-    #     filename=abalone_train, target_dtype=np.int, features_dtype=np.float64)
-    #
-    # # Test examples
-    # test_set = tf.contrib.learn.datasets.base.load_csv_without_header(
-    #     filename=abalone_test, target_dtype=np.int, features_dtype=np.float64)
-    #
-    # # Set of 7 examples for which to predict abalone ages
-    # prediction_set = tf.contrib.learn.datasets.base.load_csv_without_header(
-    #     filename=abalone_predict, target_dtype=np.int, features_dtype=np.float64)
 
-    model_params = {"learning_rate": 0.1}
+    model_params = {"learning_rate": 0.01}
     nn = tf.contrib.learn.Estimator(model_fn=model_fn, params=model_params,
                                     model_dir='./model_dir',
                                     config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.5,
                                                                       save_checkpoints_secs=5))
 
     # Load datasets.
-    training_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TRAINING,
-                                                                       features_dtype=np.float64, target_dtype=np.int)
-    test_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TEST,
-                                                                   features_dtype=np.float64, target_dtype=np.int)
+    # training_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TRAINING,
+    #                                                                    features_dtype=np.float64, target_dtype=np.int)
+    # test_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TEST,
+    #                                                                features_dtype=np.float64, target_dtype=np.int)
 
-    # test_set_target = np.zeros([test_set.target.shape[0], 3])
-    # for idx, val in enumerate(test_set[1]):
-    #     test_set_target[idx][int(val)] = 1
-    #
-    # training_set_target = np.zeros([training_set.target.shape[0], 3])
-    # for idx, val in enumerate(training_set[1]):
-    #     training_set_target[idx][int(val)] = 1
+    input_fn_train = data_set_helper.create_input_fn(
+        mode=tf.contrib.learn.ModeKeys.TRAIN,
+        input_files=['../data/iris/train.tfrecords'],
+        batch_size=10,
+        num_epochs=None)
+
+    input_fn_eval = data_set_helper.create_input_fn(
+        mode=tf.contrib.learn.ModeKeys.EVAL,
+        input_files=['../data/iris/valid.tfrecords'],
+        batch_size=5,
+        num_epochs=1)
+
+
 
     validation_metrics = {"accuracy": tf.contrib.metrics.streaming_accuracy,
                           "precision": tf.contrib.metrics.streaming_precision,
                           "recall": tf.contrib.metrics.streaming_recall}
+
     validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
-        test_set.data,
-        test_set.target,
+        # test_set.data,
+        # test_set.target,
+        input_fn=input_fn_eval,
         every_n_steps=50,
         metrics=validation_metrics)
 
     # Fit
-    nn.fit(x=training_set.data,
-           y=training_set.target,
-           steps=5000,
-           monitors=[validation_monitor])
+    nn.fit(steps=7000, monitors=[validation_monitor],
+           # x=training_set.data,
+           # y=training_set.target,
+           input_fn=input_fn_train
+           )
 
 
 
     # Evaluate accuracy.
-    ev = nn.evaluate(x=test_set.data,
-                     y=test_set.target,
-                     steps=1)
+    ev = nn.evaluate(steps=1,
+                     # x=test_set.data,
+                     # y=test_set.target
+                     input_fn=input_fn_eval
+                     )
 
     print('Accuracy: {0:f}'.format(ev['accuracy']))
 

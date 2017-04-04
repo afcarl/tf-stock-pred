@@ -9,11 +9,11 @@ import net_hparams
 from models.multi_layer import multilayer_perceptron
 from utils.eval_metric import create_evaluation_metrics
 
-tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
-tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
-tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
-tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
-FLAGS = tf.flags.FLAGS
+# tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
+# tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
+# tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
+# tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
+# FLAGS = tf.flags.FLAGS
 
 TIMESTAMP = int(time.time())
 MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))

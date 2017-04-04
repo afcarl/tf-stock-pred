@@ -10,7 +10,7 @@ def get_feature_columns(mode):
     if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
         # During training we have a label feature
         feature_columns.append(tf.contrib.layers.real_valued_column(
-            column_name="label", dimension=hparams.num_class, dtype=tf.int64))
+            column_name="label", dimension=1, dtype=tf.int64))
     return set(feature_columns)
 
 
@@ -42,5 +42,5 @@ def create_input_fn(mode, input_files, batch_size, num_epochs):
             # In evaluation we have 10 classes (utterances).
             # The first one (index 0) is always the correct one
             target = None
-        return feature_map['features'], target
+        return feature_map['features'], tf.squeeze(target, 1)
     return input_fn
