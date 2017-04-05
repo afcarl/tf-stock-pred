@@ -11,7 +11,7 @@ from utils.eval_metric import create_evaluation_metrics
 
 tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
 tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
-tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
+tf.flags.DEFINE_integer("eval_every", 200, "Evaluate after this many train steps")
 tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
 FLAGS = tf.flags.FLAGS
 
@@ -23,6 +23,7 @@ COMPANY_NAME = 'IBM'
 
 TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
 VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
+
 
 tf.logging.set_verbosity(FLAGS.loglevel)
 
@@ -61,7 +62,12 @@ def main(unused_argv):
         every_n_steps=FLAGS.eval_every,
         metrics=eval_metrics)
 
-    estimator.fit(input_fn=input_fn_train, steps=None, monitors=[eval_monitor])
+    estimator.fit(input_fn=input_fn_train, steps=100, monitors=[eval_monitor])
+
+    ev = estimator.evaluate(input_fn=input_fn_eval)
+    for row in ev:
+        print(row)
+
 
 
 if __name__ == "__main__":

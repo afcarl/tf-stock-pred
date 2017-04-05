@@ -51,12 +51,11 @@ def create_model_fn(hparams, model_impl):
                 feature,
                 None)
 
-            eval_metric_ops = {
-                "accuracy": tf.contrib.metrics.streaming_accuracy(predictions, targets)
-            }
             return model_fn_lib.ModelFnOps(mode=mode,
-                                           predictions=predictions,
-                                           eval_metric_ops=eval_metric_ops)
+                                           predictions={'predict':predictions,
+                                                        'feature':feature
+                                                        }
+                                           )
 
         if mode == tf.contrib.learn.ModeKeys.EVAL:
             predictions, loss = model_impl(
@@ -66,6 +65,7 @@ def create_model_fn(hparams, model_impl):
                 targets)
 
             eval_metric_ops = {
+                # those are returned by the estimator
                 "accuracy": tf.contrib.metrics.streaming_accuracy(predictions, targets)
             }
 
