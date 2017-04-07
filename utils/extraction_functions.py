@@ -1,7 +1,5 @@
 import pandas as pd
 
-MINUTES_IN_DAYS= 60*7
-
 def compute_delay(series, delay):
     '''
     shift the time series of a given delay
@@ -66,8 +64,8 @@ def compute_label(close_time_series):
     :param data: 
     :return: 
     '''
-    close_time_series_shift = close_time_series.shift(1)
-    labels = close_time_series - close_time_series_shift
+    close_time_series_shift = close_time_series.shift(-1)
+    labels = close_time_series_shift - close_time_series
 
     for time, value in labels.iteritems():
         if value >= 0:
@@ -77,4 +75,4 @@ def compute_label(close_time_series):
     return labels
 
 def compute_moving_average(close_time_series, days):
-    return close_time_series.rolling(window=days * MINUTES_IN_DAYS).mean()
+    return close_time_series.rolling(window=days).mean()

@@ -7,10 +7,9 @@ def get_feature_columns(mode):
     feature_columns.append(tf.contrib.layers.real_valued_column(
         column_name="features", dimension=hparams.input_size, dtype=tf.float32))
 
-    if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
-        # During training we have a label feature
-        feature_columns.append(tf.contrib.layers.real_valued_column(
-            column_name="label", dimension=1, dtype=tf.int64))
+    feature_columns.append(tf.contrib.layers.real_valued_column(column_name="label", dimension=1, dtype=tf.int64))
+
+
     return set(feature_columns)
 
 
@@ -23,7 +22,7 @@ def create_input_fn(mode, input_files, batch_size, num_epochs):
             batch_size=batch_size,
             features=features,
             reader=tf.TFRecordReader,
-            randomize_input=True,
+            randomize_input=False,
             num_epochs=num_epochs,
             # queue_capacity=10 + batch_size * 10,
             name="read_batch_features_{}".format(mode))
@@ -36,11 +35,13 @@ def create_input_fn(mode, input_files, batch_size, num_epochs):
         #         "read_batch_features_eval/file_name_queue/limit_epochs/epochs",
         #         initializer=tf.constant(0, dtype=tf.int64))
 
+        feature_map['label'] = tf.squeeze(feature_map['label'], 1)
         if mode == tf.contrib.learn.ModeKeys.TRAIN or mode == tf.contrib.learn.ModeKeys.EVAL:
             target = feature_map.pop("label")
+            return feature_map['features'], target
         else:
             # In evaluation we have 10 classes (utterances).
             # The first one (index 0) is always the correct one
-            target = None
-        return feature_map['features'], tf.squeeze(target, 1)
+            return feature_map
+
     return input_fn

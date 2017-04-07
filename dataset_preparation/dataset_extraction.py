@@ -8,12 +8,11 @@ from sklearn.model_selection import train_test_split
 # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
 #                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
 
-companies = ['IBM']
-
 KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+# KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+TIME_STAMP=20
 
-
-INPUT_DIR = "../data/stock"
+INPUT_DIR = "../data/ex_rate"
 OUTPUT_DIR = "../data"
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
@@ -34,29 +33,30 @@ def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     writer.close()
     print("Wrote to {}".format(full_path))
 
-def create_example(row, keys):
+def create_example(row):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    key_feautre = []
-    key_feautre.extend(keys)
-    for key in keys:
-        for i in range(1, 20):
-            key_feautre.append(key+'-{}'.format(i))
+    label = int(row['Label'])
 
-    features = np.array(row[key_feautre])
+    for i in range(1,20):
+        row = row.drop("Label-{}".format(i))
+    row = row.drop("Label")
+
+
+    features = np.array(row)
     example = tf.train.Example()
-    example.features.feature["label"].int64_list.value.append(int(row['Label']))
+    example.features.feature["label"].int64_list.value.append(label)
     example.features.feature["features"].float_list.value.extend(features)
     return example
 
-def create_example_sequencial(row, keys):
+def create_example_sequencial(row, keys=KEYS, time_stemp=TIME_STAMP):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    features = np.array(row).reshape(20, len(keys)+1)
+    features = np.array(row).reshape(time_stemp, len(keys)+1)
     example = tf.train.SequenceExample()
     example.context.feature["length"].int64_list.value.append(features.shape[0])
 
@@ -64,7 +64,7 @@ def create_example_sequencial(row, keys):
         fl_value = example.feature_lists.feature_list[key]
         fl_value.feature.add().float_list.value.extend(features[:,idx])
 
-    fl_value = example.feature_lists.feature_list["Label"]
+    fl_value = example.feature_lists.feature_list["label"]
     fl_value.feature.add().int64_list.value.extend(np.int64(features[:, -1]))
 
     return example
@@ -74,31 +74,35 @@ def create_example_sequencial(row, keys):
 
 
 def split_train_valid_test(data):
-    X_train, data_test = train_test_split(data, test_size=0.2, random_state=42)
-    data_train, data_valid = train_test_split(X_train, test_size=0.3, random_state=42)
+    # data_test = data.ix[pd.Timestamp("2015-01-01"):]
+    # X_train = data.ix[:pd.Timestamp("2015-01-01")]
+    # data_train, data_valid = train_test_split(X_train, test_size=0.3, random_state=42)
+
+    data_test = data.ix[pd.Timestamp("2015-01-01"):]
+    data_valid = data.ix[pd.Timestamp("2012-01-01"):pd.Timestamp("2015-01-01")]
+    data_train = data.ix[:pd.Timestamp("2012-01-01")]
     return data_train, data_valid, data_test
 
 def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
 
     full_path = os.path.join(path, file_name) + '-fea.csv'
-    if 'IBM' in file_name:
-        data = pd.read_csv(full_path, parse_dates=True, index_col=0)
-    else:
-        data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=KEYS, skiprows=1)
+    data = pd.read_csv(full_path, parse_dates=True, index_col=0)
+
+    # data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=KEYS, skiprows=1)
 
     train, valid, test = split_train_valid_test(data)
 
     create_tfrecords_file(
         input=train,
         output_file_name="train"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=example_fn,
         path=os.path.join(OUTPUT_DIR, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
         output_file_name="test"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=example_fn,
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 
@@ -106,7 +110,7 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     create_tfrecords_file(
         input=valid,
         output_file_name="valid"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=example_fn,
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 
@@ -132,9 +136,9 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
 
 if __name__ == "__main__":
 
-    example_fn = create_example_sequencial
-    output_name_suffix = '_seq'
-    # example_fn = create_example
-    # output_name_suffix = ''
+    # example_fn = create_example_sequencial
+    # output_name_suffix = '_seq'
+    example_fn = create_example
+    output_name_suffix = ''
 
-    run('IBM', example_fn, output_name_suffix)
+    run('CNY', example_fn, output_name_suffix, path=INPUT_DIR)

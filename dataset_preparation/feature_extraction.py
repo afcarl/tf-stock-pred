@@ -7,7 +7,7 @@ import utils.extraction_functions as ef
 
 
 
-def compute_label(data, experiment_type):
+def compute_label(close_time_serie, experiment_type):
     '''
     compute the label
     :param data: 
@@ -16,9 +16,9 @@ def compute_label(data, experiment_type):
     '''
     # Compute the labels
     if experiment_type == 'classification':
-        labels = ef.compute_label(data['Close'])
+        labels = ef.compute_label(close_time_serie)
     else:
-        labels = ef.compute_delay(data['Close'], -1)
+        labels = ef.compute_delay(close_time_serie, -1)
         labels = ef.compute_return(labels)
     return labels
 
@@ -31,6 +31,10 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
     :param short_term: 
     :return: 
     '''
+    # long_term *= 60*7
+    # medium_term *= 60*7
+    # short_term *= 60*7
+
     long_moving_average = ef.compute_moving_average(close_time_serie, long_term)
     medium_moving_average = ef.compute_moving_average(close_time_serie, medium_term)
     short_moving_average = ef.compute_moving_average(close_time_serie, short_term)
@@ -53,27 +57,27 @@ def run(path_conf):
                     'Ex-Dividend', 'Split Ratio',
                     'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume']
 
-    path = '../data/stock'
+    path = '../data/ex_rate'
+    primary_key = 'Close'
 
     experiment_type = 'classification'
 
-    for company_name in ['IBM']:
-        full_path = os.path.join(path, company_name) + '.csv'
 
-        if company_name == 'IBM':
-            data = pd.read_csv(full_path, parse_dates=True, index_col=0)
-        else:
-            data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
+    for company_name in ['AUD', 'CNY', 'EUR', 'JPY']:
+        full_path = os.path.join(path, company_name) + '.csv'
+        data = pd.read_csv(full_path, parse_dates=True, index_col=0)
+
+        #     data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
 
 
         print("extract feature of %s" % company_name)
 
 
-        labels = compute_label(data, experiment_type)
-        (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data['Close'])
+        labels = compute_label(data[primary_key], experiment_type)
+        (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
 
-        #  Compute prince relative returns
-        data = ef.compute_return(data)
+        # Compute prince relative returns
+        # data = ef.compute_return(data)
 
         # Insert new features
         data.insert(len(data.keys()), 'MA_long', long_MA)
@@ -85,7 +89,7 @@ def run(path_conf):
         data.insert(len(data.keys()), 'PPO_short', short_PPO)
         data.insert(len(data.keys()), 'Label', labels)
 
-        data = ef.truncate_timeseries(data, pd.Timestamp('2002-01-01'), pd.Timestamp('2016-12-20'))
+        # data = ef.truncate_timeseries(data, pd.Timestamp('2002-01-01'), pd.Timestamp('2016-12-20'))
 
         keys = list(data.keys())
         for i in range(1, 20):

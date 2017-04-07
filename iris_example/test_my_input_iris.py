@@ -5,8 +5,10 @@ from __future__ import print_function
 
 import argparse
 import sys
+from model_helper import create_model_fn
+import net_hparams
+from models.multi_layer import multilayer_perceptron
 import numpy as np
-import data_set_helper
 import tensorflow as tf
 
 from tensorflow.contrib.learn.python.learn.estimators import model_fn as model_fn_lib
@@ -18,7 +20,7 @@ IRIS_TRAINING = "iris_training.csv"
 IRIS_TEST = "iris_test.csv"
 
 
-def model_fn(features, targets, mode, params):
+def model_fn_1(features, targets, mode, params):
     with tf.variable_scope('layer_1') as vs:
         first_hidden_layer = tf.contrib.layers.relu(features, 10)
 
@@ -62,29 +64,33 @@ def model_fn(features, targets, mode, params):
 def main(unused_argv):
 
 
-    model_params = {"learning_rate": 0.01}
-    nn = tf.contrib.learn.Estimator(model_fn=model_fn, params=model_params,
+    model_params = net_hparams.create_hparams()
+    model_fn = create_model_fn(
+        model_params,
+        model_impl=multilayer_perceptron)
+
+    nn = tf.contrib.learn.Estimator(model_fn=model_fn,
                                     model_dir='./model_dir',
                                     config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.5,
                                                                       save_checkpoints_secs=5))
 
     # Load datasets.
-    # training_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TRAINING,
-    #                                                                    features_dtype=np.float64, target_dtype=np.int)
-    # test_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TEST,
-    #                                                                features_dtype=np.float64, target_dtype=np.int)
+    training_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TRAINING,
+                                                                       features_dtype=np.float64, target_dtype=np.int)
+    test_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TEST,
+                                                                   features_dtype=np.float64, target_dtype=np.int)
 
-    input_fn_train = data_set_helper.create_input_fn(
-        mode=tf.contrib.learn.ModeKeys.TRAIN,
-        input_files=['../data/iris/train.tfrecords'],
-        batch_size=10,
-        num_epochs=None)
-
-    input_fn_eval = data_set_helper.create_input_fn(
-        mode=tf.contrib.learn.ModeKeys.EVAL,
-        input_files=['../data/iris/valid.tfrecords'],
-        batch_size=5,
-        num_epochs=1)
+    # input_fn_train = data_set_helper.create_input_fn(
+    #     mode=tf.contrib.learn.ModeKeys.TRAIN,
+    #     input_files=['../data/iris/train.tfrecords'],
+    #     batch_size=10,
+    #     num_epochs=None)
+    #
+    # input_fn_eval = data_set_helper.create_input_fn(
+    #     mode=tf.contrib.learn.ModeKeys.EVAL,
+    #     input_files=['../data/iris/valid.tfrecords'],
+    #     batch_size=5,
+    #     num_epochs=1)
 
 
 
@@ -93,26 +99,26 @@ def main(unused_argv):
                           "recall": tf.contrib.metrics.streaming_recall}
 
     validation_monitor = tf.contrib.learn.monitors.ValidationMonitor(
-        # test_set.data,
-        # test_set.target,
-        input_fn=input_fn_eval,
+        test_set.data,
+        test_set.target,
+        # input_fn=input_fn_eval,
         every_n_steps=50,
         metrics=validation_metrics)
 
     # Fit
     nn.fit(steps=7000, monitors=[validation_monitor],
-           # x=training_set.data,
-           # y=training_set.target,
-           input_fn=input_fn_train
+           x=training_set.data,
+           y=training_set.target,
+           # input_fn=input_fn_train
            )
 
 
 
     # Evaluate accuracy.
     ev = nn.evaluate(steps=1,
-                     # x=test_set.data,
-                     # y=test_set.target
-                     input_fn=input_fn_eval
+                     x=test_set.data,
+                     y=test_set.target
+                     # input_fn=input_fn_eval
                      )
 
     print('Accuracy: {0:f}'.format(ev['accuracy']))

@@ -20,7 +20,6 @@ def create_train_op(loss, hparams):
 
 
 def create_model_fn(hparams, model_impl):
-    eval_metric_ops = eval_m.create_evaluation_metrics()
     '''
     Function used to create the model according different implementations and usage mode
     :param hparams: hiper-parameters used to configure the model
@@ -48,12 +47,13 @@ def create_model_fn(hparams, model_impl):
             predictions, loss = model_impl(
                 hparams,
                 mode,
-                feature,
+                feature['features'],
                 None)
 
             return model_fn_lib.ModelFnOps(mode=mode,
-                                           predictions={'predict':predictions,
-                                                        'feature':feature
+                                           predictions={'predictions':predictions,
+                                                        'features':feature['features'],
+                                                        'targets':feature['label']
                                                         }
                                            )
 

@@ -11,7 +11,7 @@ from utils.eval_metric import create_evaluation_metrics
 
 tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
 tf.flags.DEFINE_integer("num_epochs", None, "Number of training Epochs. Defaults to indefinite.")
-tf.flags.DEFINE_integer("eval_every", 200, "Evaluate after this many train steps")
+tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps")
 tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
 FLAGS = tf.flags.FLAGS
 
@@ -19,7 +19,7 @@ TIMESTAMP = int(time.time())
 MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 
-COMPANY_NAME = 'IBM'
+COMPANY_NAME = 'EUR'
 
 TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
 VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
@@ -55,6 +55,12 @@ def main(unused_argv):
         batch_size=hparams.eval_batch_size,
         num_epochs=1)
 
+    input_fn_infer = data_set.create_input_fn(
+        mode=tf.contrib.learn.ModeKeys.INFER,
+        input_files=[VALIDATION_FILE],
+        batch_size=hparams.eval_batch_size,
+        num_epochs=1)
+
     eval_metrics = create_evaluation_metrics()
 
     eval_monitor = tf.contrib.learn.monitors.ValidationMonitor(
@@ -62,11 +68,11 @@ def main(unused_argv):
         every_n_steps=FLAGS.eval_every,
         metrics=eval_metrics)
 
-    estimator.fit(input_fn=input_fn_train, steps=100, monitors=[eval_monitor])
+    estimator.fit(input_fn=input_fn_train, steps=300000, monitors=[eval_monitor])
 
-    ev = estimator.evaluate(input_fn=input_fn_eval)
-    for row in ev:
-        print(row)
+    ev = estimator.predict(input_fn=input_fn_infer)
+    for idx_row, row in enumerate(ev):
+        print("idx_row {}\t\tprediction {}\t\ttarget {}".format(idx_row, row['predictions'], row['targets']))
 
 
 

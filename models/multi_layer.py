@@ -1,57 +1,71 @@
 import tensorflow as tf
+from tensorflow.python.ops import nn
+from tensorflow.contrib.layers.python.layers import initializers
 
+def _add_hidden_layer_summary(value, tag):
+  tf.summary.scalar("%s_fraction_of_zero_values" % tag, nn.zero_fraction(value))
+  tf.summary.histogram("%s_activation" % tag, value)
 
+def parametric_relu(_x):
+  alphas = tf.get_variable('alpha', _x.get_shape()[-1],
+                       initializer=tf.constant_initializer(0.0),
+                        dtype=tf.float32)
+  pos = tf.nn.relu(_x)
+  neg = alphas * (_x - abs(_x)) * 0.5
+
+  return pos + neg
+
+def leaky_relu(x, alpha=5., max_value=None):
+    '''ReLU.
+
+    alpha: slope of negative section.
+    '''
+    return tf.maximum(alpha * x, x)
 
 def multilayer_perceptron(hparams, mode, feature, target):
     layers_output = []
+
+
     for layer_idx, h_layer_dim in enumerate(hparams.h_layer_size):
         if layer_idx == 0:
-            in_dim = hparams.input_size
             layer_input = feature
         else:
-            in_dim = hparams.h_layer_size[layer_idx - 1]
             layer_input = layers_output[-1]
 
         with tf.variable_scope('ml_{}'.format(layer_idx)) as vs:
-            W = tf.get_variable('W', shape=[in_dim, h_layer_dim],
-                                initializer=tf.truncated_normal_initializer())
+            layer_output = tf.contrib.layers.fully_connected(inputs=layer_input,
+                                                             num_outputs=h_layer_dim,
+                                                             activation_fn=parametric_relu,
+                                                             weights_initializer=initializers.xavier_initializer(),
+                                                             weights_regularizer=tf.contrib.layers.l2_regularizer(hparams.l2_reg),
+                                                             # normalizer_fn=tf.contrib.layers.layer_norm,
+                                                             scope=vs)
 
-            b = tf.get_variable('b', shape=[h_layer_dim],
-                                initializer=tf.truncated_normal_initializer())
+            if hparams.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+                layer_output = tf.nn.dropout(layer_output, keep_prob=1-hparams.dropout)
 
-            activation = tf.add(tf.matmul(layer_input, W), b)
-            l_output = tf.nn.relu(activation)
-            layers_output.append(l_output)
-            tf.summary.histogram('ml_{}_W'.format(layer_idx), W)
-            tf.summary.histogram('ml_{}_b'.format(layer_idx), b)
-            tf.summary.histogram('ml_{}_output'.format(layer_idx), l_output)
+            _add_hidden_layer_summary(layer_output, vs.name)
+            layers_output.append(layer_output)
 
 
-    with tf.variable_scope('softmax_linear')as vs:
-        W = tf.get_variable('W', shape=[hparams.h_layer_size[-1], hparams.num_class],
-                                initializer=tf.truncated_normal_initializer())
-
-        b = tf.get_variable('b', shape=[hparams.num_class],
-                            initializer=tf.truncated_normal_initializer())
-
-        logits = tf.add(tf.matmul(layers_output[-1], W), b)
+    with tf.variable_scope('logits') as vs:
+        logits = tf.contrib.layers.fully_connected(inputs=layers_output[-1],
+                                                   num_outputs=hparams.num_class,
+                                                   activation_fn=None,
+                                                   scope=vs)
+        _add_hidden_layer_summary(logits, vs.name)
         predictions = tf.argmax(tf.nn.softmax(logits), 1)
 
-        tf.summary.histogram('softmax_linear_W', W)
-        tf.summary.histogram('softmax_linear_b', b)
-        tf.summary.histogram('softmax_linear_output', logits)
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
             return predictions, None
 
+        elif mode == tf.contrib.learn.ModeKeys.TRAIN:
+            t_accuracy = tf.contrib.metrics.streaming_accuracy(predictions, target)
+            tf.summary.scalar('train_accuracy', tf.reduce_mean(t_accuracy))
 
         # Calculate the binary cross-entropy loss
-        # target = tf.squeeze(target, 1)
         losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=target, name='entropy')
-
-    if mode == tf.contrib.learn.ModeKeys.TRAIN:
-        t_accuracy = tf.contrib.metrics.streaming_accuracy(predictions, target)
-        tf.summary.scalar('train_accuracy', tf.reduce_mean(t_accuracy))
 
     mean_loss = tf.reduce_mean(losses, name='mean_loss')
     return predictions, mean_loss

@@ -9,16 +9,20 @@ HParams = namedtuple(
         "optimizer",
         "h_layer_size",
         "input_size",
-        "num_class"
+        "num_class",
+        "dropout",
+        "l2_reg"
     ])
 
 def create_hparams():
     return HParams(
-        batch_size=50,
-        eval_batch_size=50,
+        batch_size=100,
+        eval_batch_size=100,
         optimizer="Adam",
-        learning_rate=0.001,
-        h_layer_size=[100, 200, 100],
-        input_size=340,
-        num_class=2
+        learning_rate=0.01,
+        h_layer_size=[50, 40],
+        input_size=160,
+        num_class=2,
+        dropout=0.0,
+        l2_reg=0.01
     )
