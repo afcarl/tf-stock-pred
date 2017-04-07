@@ -6,7 +6,8 @@ import tensorflow as tf
 import model_helper as model
 import data_set_helper as data_set
 import net_hparams
-from models.multi_layer import multilayer_perceptron
+from models.multi_layer import multi_layer
+from models.rnn import rnn
 from utils.eval_metric import create_evaluation_metrics
 
 tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
@@ -19,10 +20,10 @@ TIMESTAMP = int(time.time())
 MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 
-COMPANY_NAME = 'EUR'
+COMPANY_NAME = 'goldman'
 
-TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
-VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
+TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_seq.tfrecords"))
+VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_seq.tfrecords"))
 
 
 tf.logging.set_verbosity(FLAGS.loglevel)
@@ -33,33 +34,39 @@ tf.logging.set_verbosity(FLAGS.loglevel)
 def main(unused_argv):
     hparams = net_hparams.create_hparams()
 
+    model_impl = eval(hparams.model_type)
+
     model_fn = model.create_model_fn(
         hparams,
-        model_impl=multilayer_perceptron)
+        model_impl=model_impl)
 
     estimator = tf.contrib.learn.Estimator(
         model_fn=model_fn,
         model_dir=MODEL_DIR,
-        config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.5,
-                                          save_checkpoints_secs=50))
+        config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.6,
+                                          save_checkpoints_secs=40))
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
         input_files=[TRAIN_FILE],
         batch_size=hparams.batch_size,
-        num_epochs=FLAGS.num_epochs)
+        num_epochs=FLAGS.num_epochs,
+        h_params=hparams
+    )
 
     input_fn_eval = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.EVAL,
         input_files=[VALIDATION_FILE],
         batch_size=hparams.eval_batch_size,
-        num_epochs=1)
+        num_epochs=1,
+        h_params=hparams)
 
     input_fn_infer = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.INFER,
         input_files=[VALIDATION_FILE],
         batch_size=hparams.eval_batch_size,
-        num_epochs=1)
+        num_epochs=1,
+        h_params=hparams)
 
     eval_metrics = create_evaluation_metrics()
 
@@ -70,9 +77,9 @@ def main(unused_argv):
 
     estimator.fit(input_fn=input_fn_train, steps=300000, monitors=[eval_monitor])
 
-    ev = estimator.predict(input_fn=input_fn_infer)
-    for idx_row, row in enumerate(ev):
-        print("idx_row {}\t\tprediction {}\t\ttarget {}".format(idx_row, row['predictions'], row['targets']))
+    # ev = estimator.predict(input_fn=input_fn_infer)
+    # for idx_row, row in enumerate(ev):
+    #     print("idx_row {}\t\tprediction {}\t\ttarget {}".format(idx_row, row['predictions'], row['targets']))
 
 
 

@@ -11,18 +11,24 @@ HParams = namedtuple(
         "input_size",
         "num_class",
         "dropout",
-        "l2_reg"
+        "l2_reg",
+        "sequence_length",
+        "experiment_type",
+        "model_type"
     ])
 
 def create_hparams():
     return HParams(
-        batch_size=100,
-        eval_batch_size=100,
+        experiment_type="classification",
+        model_type="rnn",
+        sequence_length=20,
+        batch_size=50,
+        eval_batch_size=10,
         optimizer="Adam",
         learning_rate=0.01,
-        h_layer_size=[50, 40],
-        input_size=160,
+        h_layer_size=[10, 15, 5],
+        input_size=17,
         num_class=2,
-        dropout=0.0,
-        l2_reg=0.01
+        dropout=0.5,
+        l2_reg=0.00,
     )

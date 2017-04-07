@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow.python.ops import nn
 from tensorflow.contrib.layers.python.layers import initializers
+from models.layers import dense_layer
 
 def _add_hidden_layer_summary(value, tag):
   tf.summary.scalar("%s_fraction_of_zero_values" % tag, nn.zero_fraction(value))
@@ -22,23 +23,24 @@ def leaky_relu(x, alpha=5., max_value=None):
     '''
     return tf.maximum(alpha * x, x)
 
-def multilayer_perceptron(hparams, mode, feature, target):
+def multi_layer(hparams, mode, features_map, target):
     layers_output = []
-
+    features = features_map['features']
 
     for layer_idx, h_layer_dim in enumerate(hparams.h_layer_size):
         if layer_idx == 0:
-            layer_input = feature
+            layer_input = features
         else:
             layer_input = layers_output[-1]
 
         with tf.variable_scope('ml_{}'.format(layer_idx)) as vs:
+
             layer_output = tf.contrib.layers.fully_connected(inputs=layer_input,
                                                              num_outputs=h_layer_dim,
-                                                             activation_fn=parametric_relu,
+                                                             activation_fn=tf.nn.sigmoid,
                                                              weights_initializer=initializers.xavier_initializer(),
                                                              weights_regularizer=tf.contrib.layers.l2_regularizer(hparams.l2_reg),
-                                                             # normalizer_fn=tf.contrib.layers.layer_norm,
+                                                             normalizer_fn=tf.contrib.layers.layer_norm,
                                                              scope=vs)
 
             if hparams.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:

@@ -4,8 +4,8 @@ import configparser
 import os
 import pandas as pd
 import utils.extraction_functions as ef
-
-
+import net_hparams
+import numpy as np
 
 def compute_label(close_time_serie, experiment_type):
     '''
@@ -57,13 +57,12 @@ def run(path_conf):
                     'Ex-Dividend', 'Split Ratio',
                     'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume']
 
-    path = '../data/ex_rate'
+    path = '../data/stock'
     primary_key = 'Close'
+    h_params = net_hparams.create_hparams()
 
-    experiment_type = 'classification'
 
-
-    for company_name in ['AUD', 'CNY', 'EUR', 'JPY']:
+    for company_name in ['goldman']:
         full_path = os.path.join(path, company_name) + '.csv'
         data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
@@ -73,7 +72,7 @@ def run(path_conf):
         print("extract feature of %s" % company_name)
 
 
-        labels = compute_label(data[primary_key], experiment_type)
+        labels = compute_label(data[primary_key], h_params.experiment_type)
         (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
 
         # Compute prince relative returns
@@ -92,7 +91,7 @@ def run(path_conf):
         # data = ef.truncate_timeseries(data, pd.Timestamp('2002-01-01'), pd.Timestamp('2016-12-20'))
 
         keys = list(data.keys())
-        for i in range(1, 20):
+        for i in range(1, h_params.sequence_length):
             for key in keys:
                 data.insert(len(data.keys()), key+'-{}'.format(i), ef.compute_delay(data[key], i))
                 # data.insert(len(data.keys()), 'Close-{}'.format(i), ef.compute_delay(data['Close'], i))
@@ -124,6 +123,7 @@ def run(path_conf):
         data = ef.truncate_timeseries(data, start_date, end_date)
         ef.check_data(data)
 
+        data = data.astype(np.float32)
         data.to_csv(os.path.join(path, company_name) + '-fea.csv')
 
 

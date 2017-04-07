@@ -2,6 +2,7 @@ __author__ = 'andompesta'
 import quandl
 import configparser
 import os
+import utils.extraction_functions as ef
 
 
 
@@ -9,17 +10,18 @@ import os
 
 
 company = {'apple':'WIKI/AAPL', 'google':'WIKI/GOOGL', 'yahoo':'WIKI/YHOO', 'goldman':'WIKI/GS', 'capital_city_bank':'WIKI/CCBG', 'bank_of_america':'WIKI/BAC', 'sunTrust_banks':'WIKI/STI', 'cantel_medical_corp':'WIKI/CMN', 'ICU_medical':'WIKI/ICUI', 'wright_medical_group':'WIKI/WMGI'}
-excange_rate = {'AUD':'FRED/DEXUSAL', 'CNY':'FRED/DEXCHUS', 'EUR':'FRED/DEXUSEU', 'JPY':'FRED/DEXCHUS'}
+# excange_rate = {'AUD':'FRED/DEXUSAL', 'CNY':'FRED/DEXCHUS', 'EUR':'FRED/DEXUSEU', 'JPY':'FRED/DEXCHUS'}
 
 prop = configparser.ConfigParser()
-prop.read('../conf.ini')
+prop.read('../../conf.ini')
 
 collapse = prop.get('ALL', 'collapse')
+OUTPUT_PATH = "../../data/stock"
 
-for company_name in excange_rate.keys():
-    data = quandl.get(excange_rate[company_name], authtoken="zTEsWpGga_5eqG6YCkRS", start_date="2000-01-01", end_date="2017-03-01", collapse=collapse)
-    data = data.rename(columns={excange_rate[company_name].split('/')[1]: "Close"})
-
+for company_name in company.keys():
+    data = quandl.get(company[company_name], authtoken="zTEsWpGga_5eqG6YCkRS", start_date="2000-01-01", end_date="2017-04-01", collapse=collapse)
+    # data = data.rename(columns={company[company_name].split('/')[1]: "Close"})
+    data = ef.remove_unused_key(data, remove_keys=['Split Ratio', 'Ex-Dividend'])
     for key in data.keys():
         if '. ' in key:
             data[key.replace('. ', '_')] = data.pop(key)
@@ -36,6 +38,6 @@ for company_name in excange_rate.keys():
     #     data = data.drop(del_time)
 
 
-    full_path = os.path.join('../data/ex_rate', company_name) + '.csv'
+    full_path = os.path.join(OUTPUT_PATH, company_name) + '.csv'
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     data.to_csv(full_path)

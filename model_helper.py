@@ -26,13 +26,13 @@ def create_model_fn(hparams, model_impl):
     :param model_impl: implementation of the model used, have to use the same interface to inject a different model
     :return: probabilities of the predicted class, value of the loss function, operation to execute the training
     '''
-    def model_fn(feature, targets, mode):
+    def model_fn(features_map, targets, mode):
 
         if mode == tf.contrib.learn.ModeKeys.TRAIN:
             predictions, loss = model_impl(
                 hparams,
                 mode,
-                feature,
+                features_map,
                 targets)
             train_op = create_train_op(loss, hparams)
 
@@ -47,13 +47,13 @@ def create_model_fn(hparams, model_impl):
             predictions, loss = model_impl(
                 hparams,
                 mode,
-                feature['features'],
+                features_map,
                 None)
 
             return model_fn_lib.ModelFnOps(mode=mode,
                                            predictions={'predictions':predictions,
-                                                        'features':feature['features'],
-                                                        'targets':feature['label']
+                                                        'features':features_map['features'],
+                                                        'targets':features_map['label']
                                                         }
                                            )
 
@@ -61,7 +61,7 @@ def create_model_fn(hparams, model_impl):
             predictions, loss = model_impl(
                 hparams,
                 mode,
-                feature,
+                features_map,
                 targets)
 
             eval_metric_ops = {

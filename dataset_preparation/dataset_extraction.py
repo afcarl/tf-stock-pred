@@ -12,7 +12,7 @@ KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'Adj_Open', 'Adj_High','Adj_Low'
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 TIME_STAMP=20
 
-INPUT_DIR = "../data/ex_rate"
+INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
@@ -45,7 +45,7 @@ def create_example(row):
     row = row.drop("Label")
 
 
-    features = np.array(row)
+    features = np.array(row[KEYS])
     example = tf.train.Example()
     example.features.feature["label"].int64_list.value.append(label)
     example.features.feature["features"].float_list.value.extend(features)
@@ -56,17 +56,16 @@ def create_example_sequencial(row, keys=KEYS, time_stemp=TIME_STAMP):
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    features = np.array(row).reshape(time_stemp, len(keys)+1)
-    example = tf.train.SequenceExample()
-    example.context.feature["length"].int64_list.value.append(features.shape[0])
+    features = np.array(row).reshape(time_stemp, len(keys)+1)[::-1]
+    example = tf.train.Example()
+    example.features.feature["length"].int64_list.value.append(features.shape[0])
 
     for idx, key in enumerate(keys):
-        fl_value = example.feature_lists.feature_list[key]
-        fl_value.feature.add().float_list.value.extend(features[:,idx])
+        example.features.feature[key].float_list.value.extend(features[:,idx])
 
-    fl_value = example.feature_lists.feature_list["label"]
-    fl_value.feature.add().int64_list.value.extend(np.int64(features[:, -1]))
-
+    # fl_value = example.feature_lists.feature_list["label"]
+    # fl_value.feature.add().int64_list.value.extend(np.int64(features[:, -1]))
+    example.features.feature['label'].int64_list.value.extend(np.int64(features[:, -1]))
     return example
     # write the new example
 
@@ -136,9 +135,9 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
 
 if __name__ == "__main__":
 
-    # example_fn = create_example_sequencial
-    # output_name_suffix = '_seq'
-    example_fn = create_example
-    output_name_suffix = ''
+    example_fn = create_example_sequencial
+    output_name_suffix = '_seq'
+    # example_fn = create_example
+    # output_name_suffix = ''
 
-    run('CNY', example_fn, output_name_suffix, path=INPUT_DIR)
+    run('goldman', example_fn, output_name_suffix, path=INPUT_DIR)
