@@ -6,7 +6,7 @@ KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'Adj_Open', 'Adj_High','Adj_Low'
 def get_feature_columns(h_params):
     feature_columns = []
 
-    if h_params.model_type == 'rnn':
+    if "rnn" in h_params.model_type:
         feature_columns.append(tf.contrib.layers.real_valued_column(column_name="length",
                                                                     dimension=1, dtype=tf.int64))
         for key in KEYS:
@@ -47,7 +47,7 @@ def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
         #         initializer=tf.constant(0, dtype=tf.int64))
 
         target = feature_map.pop("label")
-        if h_params.model_type == 'rnn':
+        if "rnn" in h_params.model_type:
             length = tf.squeeze(feature_map.pop("length"))
             features = tf.concat([tf.expand_dims(feature_map[k], 2)for k in feature_map], axis=2)
             return {'features':features, 'length':length}, target[:,-1]

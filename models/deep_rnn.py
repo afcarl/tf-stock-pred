@@ -22,7 +22,7 @@ def leaky_relu(x, alpha=5., max_value=None):
     '''
     return tf.maximum(alpha * x, x)
 
-def rnn(h_params, mode, features_map, target):
+def deep_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
 

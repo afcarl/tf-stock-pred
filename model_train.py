@@ -7,7 +7,9 @@ import model_helper as model
 import data_set_helper as data_set
 import net_hparams
 from models.multi_layer import mlp
-from models.rnn import rnn
+from models.deep_rnn import deep_rnn
+from models.simple_rnn import simple_rnn
+
 from utils.eval_metric import create_evaluation_metrics
 
 tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
@@ -22,8 +24,8 @@ MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 COMPANY_NAME = 'goldman'
 
-TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
-VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
+TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_seq.tfrecords"))
+VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_seq.tfrecords"))
 
 
 tf.logging.set_verbosity(FLAGS.loglevel)
@@ -44,7 +46,7 @@ def main(unused_argv):
         model_fn=model_fn,
         model_dir=MODEL_DIR,
         config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.6,
-                                          save_checkpoints_secs=40))
+                                          save_checkpoints_secs=180))
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
@@ -75,7 +77,7 @@ def main(unused_argv):
         every_n_steps=FLAGS.eval_every,
         metrics=eval_metrics)
 
-    estimator.fit(input_fn=input_fn_train, steps=300000, monitors=[eval_monitor])
+    estimator.fit(input_fn=input_fn_train, steps=None, monitors=[eval_monitor])
 
     # ev = estimator.predict(input_fn=input_fn_infer)
     # for idx_row, row in enumerate(ev):

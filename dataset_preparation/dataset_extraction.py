@@ -14,6 +14,7 @@ TIME_STAMP=20
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
+COMPANY_NAME = "IBM"
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """
@@ -135,9 +136,9 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
 
 if __name__ == "__main__":
 
-    # example_fn = create_example_sequencial
-    # output_name_suffix = '_seq'
-    example_fn = create_example
-    output_name_suffix = ''
+    example_fn = create_example_sequencial
+    output_name_suffix = '_seq'
+    # example_fn = create_example
+    # output_name_suffix = ''
 
-    run('goldman', example_fn, output_name_suffix, path=INPUT_DIR)
+    run(COMPANY_NAME, example_fn, output_name_suffix, path=INPUT_DIR)
