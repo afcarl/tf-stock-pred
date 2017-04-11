@@ -33,7 +33,7 @@ def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     writer.close()
     print("Wrote to {}".format(full_path))
 
-def create_example(row):
+def create_example(row,  keys=KEYS):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
@@ -45,18 +45,18 @@ def create_example(row):
     row = row.drop("Label")
 
 
-    features = np.array(row[KEYS])
+    features = np.array(row[keys])
     example = tf.train.Example()
     example.features.feature["label"].int64_list.value.append(label)
     example.features.feature["features"].float_list.value.extend(features)
     return example
 
-def create_example_sequencial(row, keys=KEYS, time_stemp=TIME_STAMP):
+def create_example_sequencial(row, keys=KEYS):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    features = np.array(row).reshape(time_stemp, len(keys)+1)[::-1]
+    features = np.array(row).reshape(TIME_STAMP, len(keys)+1)[::-1]
     example = tf.train.Example()
     example.features.feature["length"].int64_list.value.append(features.shape[0])
 
@@ -94,14 +94,14 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     create_tfrecords_file(
         input=train,
         output_file_name="train"+output_name_suffix+".tfrecords",
-        example_fn=example_fn,
+        example_fn=functools.partial(example_fn, keys=KEYS),
         path=os.path.join(OUTPUT_DIR, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
         output_file_name="test"+output_name_suffix+".tfrecords",
-        example_fn=example_fn,
+        example_fn=functools.partial(example_fn, keys=KEYS),
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 
@@ -109,7 +109,7 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     create_tfrecords_file(
         input=valid,
         output_file_name="valid"+output_name_suffix+".tfrecords",
-        example_fn=example_fn,
+        example_fn=functools.partial(example_fn, keys=KEYS),
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 
@@ -135,9 +135,9 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
 
 if __name__ == "__main__":
 
-    example_fn = create_example_sequencial
-    output_name_suffix = '_seq'
-    # example_fn = create_example
-    # output_name_suffix = ''
+    # example_fn = create_example_sequencial
+    # output_name_suffix = '_seq'
+    example_fn = create_example
+    output_name_suffix = ''
 
     run('goldman', example_fn, output_name_suffix, path=INPUT_DIR)

@@ -6,7 +6,7 @@ import tensorflow as tf
 import model_helper as model
 import data_set_helper as data_set
 import net_hparams
-from models.multi_layer import multi_layer
+from models.multi_layer import mlp
 from models.rnn import rnn
 from utils.eval_metric import create_evaluation_metrics
 
@@ -22,8 +22,8 @@ MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 COMPANY_NAME = 'goldman'
 
-TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_seq.tfrecords"))
-VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_seq.tfrecords"))
+TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train.tfrecords"))
+VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid.tfrecords"))
 
 
 tf.logging.set_verbosity(FLAGS.loglevel)

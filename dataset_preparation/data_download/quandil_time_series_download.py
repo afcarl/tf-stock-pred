@@ -12,13 +12,10 @@ import utils.extraction_functions as ef
 company = {'apple':'WIKI/AAPL', 'google':'WIKI/GOOGL', 'yahoo':'WIKI/YHOO', 'goldman':'WIKI/GS', 'capital_city_bank':'WIKI/CCBG', 'bank_of_america':'WIKI/BAC', 'sunTrust_banks':'WIKI/STI', 'cantel_medical_corp':'WIKI/CMN', 'ICU_medical':'WIKI/ICUI', 'wright_medical_group':'WIKI/WMGI'}
 # excange_rate = {'AUD':'FRED/DEXUSAL', 'CNY':'FRED/DEXCHUS', 'EUR':'FRED/DEXUSEU', 'JPY':'FRED/DEXCHUS'}
 
-prop = configparser.ConfigParser()
-prop.read('../../conf.ini')
-
-collapse = prop.get('ALL', 'collapse')
+collapse = 'daily'
 OUTPUT_PATH = "../../data/stock"
 
-for company_name in company.keys():
+for company_name in ['goldman']:
     data = quandl.get(company[company_name], authtoken="zTEsWpGga_5eqG6YCkRS", start_date="2000-01-01", end_date="2017-04-01", collapse=collapse)
     # data = data.rename(columns={company[company_name].split('/')[1]: "Close"})
     data = ef.remove_unused_key(data, remove_keys=['Split Ratio', 'Ex-Dividend'])

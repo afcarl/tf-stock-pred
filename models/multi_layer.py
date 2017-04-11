@@ -16,14 +16,14 @@ def parametric_relu(_x):
 
   return pos + neg
 
-def leaky_relu(x, alpha=5., max_value=None):
+def leaky_relu(x, alpha=0.001):
     '''ReLU.
 
     alpha: slope of negative section.
     '''
     return tf.maximum(alpha * x, x)
 
-def multi_layer(hparams, mode, features_map, target):
+def mlp(hparams, mode, features_map, target):
     layers_output = []
     features = features_map['features']
 
@@ -37,10 +37,11 @@ def multi_layer(hparams, mode, features_map, target):
 
             layer_output = tf.contrib.layers.fully_connected(inputs=layer_input,
                                                              num_outputs=h_layer_dim,
-                                                             activation_fn=tf.nn.sigmoid,
-                                                             weights_initializer=initializers.xavier_initializer(),
+                                                             activation_fn=leaky_relu,
+                                                             weights_initializer=tf.truncated_normal_initializer(mean=0.5, stddev=0.5),
+                                                             # weights_initializer=initializers.xavier_initializer(),
                                                              weights_regularizer=tf.contrib.layers.l2_regularizer(hparams.l2_reg),
-                                                             normalizer_fn=tf.contrib.layers.layer_norm,
+                                                             # normalizer_fn=tf.contrib.layers.layer_norm,
                                                              scope=vs)
 
             if hparams.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:

@@ -14,11 +14,9 @@ def get_feature_columns(h_params):
                                                                         dimension=h_params.sequence_length, dtype=tf.float32))
         feature_columns.append(tf.contrib.layers.real_valued_column(column_name="label",
                                                                     dimension=h_params.sequence_length, dtype=tf.int64))
-
-
     else:
         feature_columns.append(tf.contrib.layers.real_valued_column(
-            column_name="features", dimension=h_params.input_size, dtype=tf.float32))
+            column_name="features", dimension=(h_params.input_size), dtype=tf.float32))
 
         feature_columns.append(tf.contrib.layers.real_valued_column(column_name="label",
                                                                     dimension=1, dtype=tf.int64))

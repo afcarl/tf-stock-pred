@@ -10,9 +10,8 @@ import numpy as np
 def compute_label(close_time_serie, experiment_type):
     '''
     compute the label
-    :param data: 
-    :param experiment_type: 
-    :return: 
+    :param close_time_serie: closing price time-series
+    :param experiment_type: type of the experiment: classification or regression
     '''
     # Compute the labels
     if experiment_type == 'classification':
@@ -25,11 +24,10 @@ def compute_label(close_time_serie, experiment_type):
 def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short_term=10):
     '''
     compute the moving average of the given time series for different time interval
-    :param close_time_serie: 
-    :param long_term: 
-    :param medium_term: 
-    :param short_term: 
-    :return: 
+    :param close_time_serie: closing price time-series
+    :param long_term: days of the long term MA
+    :param medium_term: days for the medium MA
+    :param short_term: days for the short MA
     '''
     # long_term *= 60*7
     # medium_term *= 60*7
@@ -65,9 +63,6 @@ def run(path_conf):
     for company_name in ['goldman']:
         full_path = os.path.join(path, company_name) + '.csv'
         data = pd.read_csv(full_path, parse_dates=True, index_col=0)
-
-        #     data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=header_names, skiprows=1)
-
 
         print("extract feature of %s" % company_name)
 
