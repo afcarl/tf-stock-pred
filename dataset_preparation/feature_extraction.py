@@ -60,7 +60,7 @@ def run(path_conf):
     h_params = net_hparams.create_hparams()
 
 
-    for company_name in ['IBM']:
+    for company_name in ['goldman']:
         full_path = os.path.join(path, company_name) + '.csv'
         data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
@@ -71,7 +71,7 @@ def run(path_conf):
         (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
 
         # Compute prince relative returns
-        # data = ef.compute_return(data)
+        data = ef.compute_return(data)
 
         # Insert new features
         data.insert(len(data.keys()), 'MA_long', long_MA)
@@ -83,7 +83,7 @@ def run(path_conf):
         data.insert(len(data.keys()), 'PPO_short', short_PPO)
         data.insert(len(data.keys()), 'Label', labels)
 
-        data = ef.truncate_timeseries(data, pd.Timestamp('2002-01-01'), pd.Timestamp('2016-12-20'))
+        data = ef.truncate_timeseries(data, pd.Timestamp('2001-01-01'), pd.Timestamp('2017-01-01'))
 
         keys = list(data.keys())
         for i in range(1, h_params.sequence_length):

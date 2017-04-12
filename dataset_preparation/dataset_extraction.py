@@ -14,7 +14,7 @@ TIME_STAMP=20
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
-COMPANY_NAME = "IBM"
+COMPANY_NAME = "goldman"
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """

@@ -36,7 +36,9 @@ def simple_rnn(h_params, mode, features_map, target):
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
         # Define a lstm cell with tensorflow
-        cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1], forget_bias=1.0)
+        cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
+                                       forget_bias=1.0,
+                                       activation=tf.nn.tanh)
         # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
