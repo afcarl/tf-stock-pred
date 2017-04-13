@@ -7,7 +7,7 @@ import argparse
 import sys
 from model_helper import create_model_fn
 import net_hparams
-from models.multi_layer import multilayer_perceptron
+from models.multi_layer import mlp
 import numpy as np
 import tensorflow as tf
 
@@ -67,7 +67,7 @@ def main(unused_argv):
     model_params = net_hparams.create_hparams()
     model_fn = create_model_fn(
         model_params,
-        model_impl=multilayer_perceptron)
+        model_impl=mlp)
 
     nn = tf.contrib.learn.Estimator(model_fn=model_fn,
                                     model_dir='./model_dir',
@@ -76,9 +76,11 @@ def main(unused_argv):
 
     # Load datasets.
     training_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TRAINING,
-                                                                       features_dtype=np.float64, target_dtype=np.int)
+                                                                       features_dtype=np.float32,
+                                                                       target_dtype=np.int)
     test_set = tf.contrib.learn.datasets.base.load_csv_with_header(filename=IRIS_TEST,
-                                                                   features_dtype=np.float64, target_dtype=np.int)
+                                                                   features_dtype=np.float32,
+                                                                   target_dtype=np.int)
 
     # input_fn_train = data_set_helper.create_input_fn(
     #     mode=tf.contrib.learn.ModeKeys.TRAIN,

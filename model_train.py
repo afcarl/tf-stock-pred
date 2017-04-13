@@ -10,6 +10,7 @@ from models.multi_layer import mlp
 from models.deep_rnn import deep_rnn
 from models.simple_rnn import simple_rnn
 from models.cnn_rnn import cnn_rnn
+from models.hierarcical_cnn_rnn import h_cnn_rnn
 
 from utils.eval_metric import create_evaluation_metrics
 

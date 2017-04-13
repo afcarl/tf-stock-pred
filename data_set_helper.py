@@ -1,7 +1,7 @@
 import tensorflow as tf
 
 
-KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 
 def get_feature_columns(h_params):
     feature_columns = []

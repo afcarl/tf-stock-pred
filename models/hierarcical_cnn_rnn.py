@@ -1,16 +1,11 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
+
 import utils.summarizer as s
 
 
-def parametric_relu(_x):
-  alphas = tf.get_variable('alpha', _x.get_shape()[-1],
-                       initializer=tf.constant_initializer(0.0),
-                        dtype=tf.float32)
-  pos = tf.nn.relu(_x)
-  neg = alphas * (_x - abs(_x)) * 0.5
-
-  return pos + neg
+def conv2d(x, W):
+    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='VALID')
 
 def leaky_relu(x, alpha=.5, max_value=None):
     '''ReLU.
@@ -19,34 +14,56 @@ def leaky_relu(x, alpha=.5, max_value=None):
     '''
     return tf.maximum(alpha * x, x)
 
-def deep_rnn(h_params, mode, features_map, target):
+def h_cnn_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
 
-    # Prepare data shape to match `rnn` function requirements
-    # Current data input shape: (batch_size, n_steps, n_input)
-    # Required shape: 'n_steps' tensors list of shape (batch_size, n_input)
-    # feature = tf.unstack(feature, h_params.sequence_length, 1)
+    in_channel = 1
+    features = tf.expand_dims(features, -1)         # add channel dim
+    #apply conv_filtering
+    layers_output = []
+    for idx, dim in enumerate(h_params.h_layer_size[:-2]): # -2 because there is the ouput layer and the linear projection
+        if idx == 0:
+            input_layer = features
+            in_channel = 1
+        else:
+            input_layer = layers_output[-1]
+            in_channel = h_params.h_layer_size[idx - 1][1]
 
-    #apply unlinera transformation
-    for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size[:-1]):
+        with tf.variable_scope('cnn_{}'.format(idx)) as vs:
+            W = tf.get_variable('kernel', shape=[1, dim[0], in_channel, dim[1]])
+            b = tf.get_variable('bias', shape=[dim[1]])
+            layers_output.append(tf.nn.tanh(conv2d(input_layer, W) + b))
+            s.add_kernel_summary(W, vs.name)
+
+    # Concatenate the different filtered time_series
+    features = tf.unstack(layers_output[-1], axis=3)
+    features = tf.concat(features, axis=2)
+
+    # apply linera transformation
+    for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size[2:-1]):
         layers_output = []
         with tf.variable_scope('ml_{}'.format(layer_idx), reuse=True) as vs:
             # Iterate over the timestamp
             for t in range(0, h_params.sequence_length):
                 layer_output = tf.contrib.layers.fully_connected(inputs=features[:, t, :],
-                                                                num_outputs=h_layer_dim,
-                                                                activation_fn=leaky_relu,
-                                                                weights_initializer=initializers.xavier_initializer(),
-                                                                # normalizer_fn=tf.contrib.layers.layer_norm,
-                                                                scope=vs)
+                                                                 num_outputs=h_layer_dim,
+                                                                 activation_fn=leaky_relu,
+                                                                 weights_initializer=initializers.xavier_initializer(),
+                                                                 # normalizer_fn=tf.contrib.layers.layer_norm,
+                                                                 scope=vs)
 
                 # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
                 #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
-                layers_output.append(tf.expand_dims(layer_output, 1))   # add again the timestemp dimention to allow concatenation
+
+                layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
             # proved to be the same weights
-            s.add_hidden_layer_summary(activation=layers_output[-1], weight=tf.get_variable("weights"), name=vs.name)
-        features = tf.concat(layers_output, axis=1)
+            s.add_hidden_layers_summary(layers_output, vs.name, weight=tf.get_variable("weights"))
+        features = tf.concat(layers_output, axis=1)     # concat the different time_stamp
+
+    # TODO: linear layer transformation
+    # TODO: try attention transfomration
+    # TODO: try an highway networks
 
 
     with tf.variable_scope('rnn') as vs:
@@ -63,8 +80,8 @@ def deep_rnn(h_params, mode, features_map, target):
                                                     sequence_length=sequence_length,
                                                     dtype=tf.float32)
 
-        s.add_hidden_layers_summary(outputs, vs.name + "_output")
-        s.add_hidden_layers_summary(states, vs.name + "_state")
+        s.add_hidden_layers_summary(tensors=outputs, name=vs.name + "_output")
+        s.add_hidden_layers_summary(tensors=states, name=vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],

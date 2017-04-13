@@ -1,10 +1,6 @@
 import tensorflow as tf
 from tensorflow.python.ops import nn
-from tensorflow.contrib.layers.python.layers import initializers
-
-def _add_hidden_layer_summary(value, tag):
-  tf.summary.scalar("%s_fraction_of_zero_values" % tag, nn.zero_fraction(value))
-  tf.summary.histogram("%s_activation" % tag, value)
+import utils.summarizer as s
 
 def parametric_relu(_x):
   alphas = tf.get_variable('alpha', _x.get_shape()[-1],
@@ -47,15 +43,15 @@ def simple_rnn(h_params, mode, features_map, target):
                                                     dtype=tf.float32)
         # for num_step, output in enumerate(outputs):
         #     _add_hidden_layer_summary(output, vs.name+"_{}".format(num_step))
-        _add_hidden_layer_summary(outputs[-1], vs.name + "_output")
-        _add_hidden_layer_summary(states[-1], vs.name+ "state")
+        s.add_hidden_layers_summary(outputs, vs.name + "_output")
+        s.add_hidden_layers_summary(states, vs.name + "state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
                                                    num_outputs=h_params.num_class,
                                                    activation_fn=None,
                                                    scope=vs)
-        _add_hidden_layer_summary(logits, vs.name)
+        s.add_hidden_layer_summary(logits, vs.name)
         predictions = tf.argmax(tf.nn.softmax(logits), 1)
 
 

@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
 #                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
 
-KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 TIME_STAMP=20
 

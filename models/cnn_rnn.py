@@ -1,10 +1,8 @@
 import tensorflow as tf
-from tensorflow.python.ops import nn
 from tensorflow.contrib.layers.python.layers import initializers
 
-def _add_hidden_layer_summary(value, tag):
-  tf.summary.scalar("%s_fraction_of_zero_values" % tag, nn.zero_fraction(value))
-  tf.summary.histogram("%s_activation" % tag, value)
+import utils.summarizer as s
+
 
 def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='VALID')
@@ -23,34 +21,20 @@ def cnn_rnn(h_params, mode, features_map, target):
     in_channel = 1
     features = tf.expand_dims(features, -1)         # add channel dim
     #apply conv_filtering
-    with tf.variable_scope('cnn_one_by_one') as vs:
-        W = tf.get_variable('kernel', shape=[1, 1, in_channel, h_params.one_by_one_out_filters])
-        b = tf.get_variable('bias', shape=[h_params.one_by_one_out_filters])
-        filter_one_by_one = tf.nn.tanh(conv2d(features, W) + b)
-        # visualization
-
-        # scale weights to [0 1], type is still float
-        x_min = tf.reduce_min(W)
-        x_max = tf.reduce_max(W)
-        W_0_to_1 = (W - x_min) / (x_max - x_min)
-        # to tf.image_summary format [batch_size, height, width, channels]
-        W_transposed = tf.transpose(W_0_to_1, [3, 0, 1, 2])
-
-        tf.summary.image(vs.name + '_filters', W_transposed, max_outputs=3)
 
     with tf.variable_scope('cnn_one_by_all') as vs:
         W = tf.get_variable('kernel', shape=[1, h_params.input_size, in_channel, h_params.one_by_all_out_filters])
         b = tf.get_variable('bias', shape=[h_params.one_by_all_out_filters])
         filter_one_by_all = tf.nn.tanh(conv2d(features, W) + b)
 
-        # scale weights to [0 1], type is still float
-        x_min = tf.reduce_min(W)
-        x_max = tf.reduce_max(W)
-        W_0_to_1 = (W - x_min) / (x_max - x_min)
-        # to tf.image_summary format [batch_size, height, width, channels]
-        W_transposed = tf.transpose(W_0_to_1, [3, 0, 1, 2])
+        s.add_kernel_summary(W, vs.name)
 
-        tf.summary.image(vs.name + '_filters', W_transposed, max_outputs=3)
+    with tf.variable_scope('cnn_one_by_one') as vs:
+        W = tf.get_variable('kernel', shape=[1, 1, in_channel, h_params.one_by_one_out_filters])
+        b = tf.get_variable('bias', shape=[h_params.one_by_one_out_filters])
+        filter_one_by_one = tf.nn.tanh(conv2d(features, W) + b)
+
+        s.add_kernel_summary(W, vs.name)
 
     # Concatenate the different filtered time_series
     features = tf.unstack(filter_one_by_all, axis=3)
@@ -75,8 +59,7 @@ def cnn_rnn(h_params, mode, features_map, target):
 
                 layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
             # proved to be the same weights
-            _add_hidden_layer_summary(tf.get_variable("weights"), vs.name + "_weights")
-            _add_hidden_layer_summary(layers_output[-1], vs.name + "_activation")
+            s.add_hidden_layers_summary(layers_output, vs.name, weight=tf.get_variable("weights"))
         features = tf.concat(layers_output, axis=1)
 
     # TODO: linear layer transformation
@@ -98,15 +81,15 @@ def cnn_rnn(h_params, mode, features_map, target):
                                                     sequence_length=sequence_length,
                                                     dtype=tf.float32)
 
-        _add_hidden_layer_summary(outputs[-1], vs.name + "_output")
-        _add_hidden_layer_summary(states[-1], vs.name + "_state")
+        s.add_hidden_layers_summary(tensors=outputs, name=vs.name + "_output")
+        s.add_hidden_layers_summary(tensors=states, name=vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
                                                    num_outputs=h_params.num_class,
                                                    activation_fn=None,
                                                    scope=vs)
-        _add_hidden_layer_summary(logits, vs.name)
+        s.add_hidden_layer_summary(logits, vs.name)
         predictions = tf.argmax(tf.nn.softmax(logits), 1)
 
 

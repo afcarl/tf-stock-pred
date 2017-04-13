@@ -69,6 +69,7 @@ def run(path_conf):
 
         labels = compute_label(data[primary_key], h_params.experiment_type)
         (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
+        accumulator_distributio = ef.accumulation_distribution_line(data)
 
         # Compute prince relative returns
         data = ef.compute_return(data)
@@ -81,6 +82,7 @@ def run(path_conf):
         data.insert(len(data.keys()), 'MACD_short', short_MACD)
         data.insert(len(data.keys()), 'PPO_long', long_PPO)
         data.insert(len(data.keys()), 'PPO_short', short_PPO)
+        data.insert(5, 'A/D', accumulator_distributio)
         data.insert(len(data.keys()), 'Label', labels)
 
         data = ef.truncate_timeseries(data, pd.Timestamp('2001-01-01'), pd.Timestamp('2017-01-01'))

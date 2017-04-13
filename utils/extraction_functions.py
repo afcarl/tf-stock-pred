@@ -1,5 +1,20 @@
 import pandas as pd
 
+
+def accumulation_distribution_line(series):
+    '''
+    compute the Accumulation Distribution Line
+    :param series: timeseires
+    :return: 
+    '''
+    money_flow_multiplyer = ((series['Close'] - series['Low']) - (series['High'] - series['Close'])) / (series['High'] - series['Low'])
+    money_flow_multiplyer = money_flow_multiplyer.fillna(0) # when high=low there is a matematical error. Fill it with 0
+    money_flow_volume = money_flow_multiplyer * series['Volume']
+    accumulation_distribution = money_flow_volume.cumsum()
+    return accumulation_distribution
+
+
+
 def compute_delay(series, delay):
     '''
     shift the time series of a given delay
