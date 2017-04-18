@@ -61,7 +61,6 @@ def h_cnn_rnn(h_params, mode, features_map, target):
             s.add_hidden_layers_summary(layers_output, vs.name, weight=tf.get_variable("weights"))
         features = tf.concat(layers_output, axis=1)     # concat the different time_stamp
 
-    # TODO: linear layer transformation
     # TODO: try attention transfomration
     # TODO: try an highway networks
 

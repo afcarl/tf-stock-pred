@@ -3,13 +3,15 @@ import functools
 import numpy as np
 import os
 import pandas as pd
-import sklearn.datasets as sd
+import net_hparams
 from sklearn.model_selection import train_test_split
+
 # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
 #                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo']
 
-KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+# KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+h_parmas = net_hparams.create_hparams()
 TIME_STAMP=20
 
 INPUT_DIR = "../data/stock"
@@ -34,7 +36,7 @@ def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     writer.close()
     print("Wrote to {}".format(full_path))
 
-def create_example(row,  keys=KEYS):
+def create_example(row,  keys):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
@@ -52,7 +54,7 @@ def create_example(row,  keys=KEYS):
     example.features.feature["features"].float_list.value.extend(features)
     return example
 
-def create_example_sequencial(row, keys=KEYS):
+def create_example_sequencial(row, keys):
     """
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
@@ -95,14 +97,14 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     create_tfrecords_file(
         input=train,
         output_file_name="train"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(OUTPUT_DIR, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
         output_file_name="test"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 
@@ -110,7 +112,7 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     create_tfrecords_file(
         input=valid,
         output_file_name="valid"+output_name_suffix+".tfrecords",
-        example_fn=functools.partial(example_fn, keys=KEYS),
+        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(OUTPUT_DIR, file_name)
     )
 

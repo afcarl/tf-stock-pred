@@ -1,11 +1,8 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
-
 import utils.summarizer as s
+import models.layers.conv_layer as conv_layer
 
-
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='VALID')
 
 def leaky_relu(x, alpha=.5, max_value=None):
     '''ReLU.
@@ -20,51 +17,62 @@ def cnn_rnn(h_params, mode, features_map, target):
 
     in_channel = 1
     features = tf.expand_dims(features, -1)         # add channel dim
+
+
     #apply conv_filtering
+    # filtered_all = conv_layer.conv2d(features,
+    #                            filter_size=[1, h_params.input_size],
+    #                            in_channel=in_channel,
+    #                            out_channel=h_params.one_by_all_out_filters,
+    #                            name="cnn_all")
 
-    with tf.variable_scope('cnn_one_by_all') as vs:
-        W = tf.get_variable('kernel', shape=[1, h_params.input_size, in_channel, h_params.one_by_all_out_filters])
-        b = tf.get_variable('bias', shape=[h_params.one_by_all_out_filters])
-        filter_one_by_all = tf.nn.tanh(conv2d(features, W) + b)
+    # filtered_one = conv_layer.highway_conv2d(features,
+    #                              filter_size=[1, 1],
+    #                              in_channel=in_channel,
+    #                              out_channel=h_params.one_by_one_out_filters,
+    #                              name="highway_cnn_one")
 
-        s.add_kernel_summary(W, vs.name)
+    filtered_one = conv_layer.gated_conv2d(features,
+                                           filter_size=[1, 1],
+                                           in_channel=in_channel,
+                                           out_channel=h_params.one_by_one_out_filters,
+                                           name="gated_cnn")
 
-    with tf.variable_scope('cnn_one_by_one') as vs:
-        W = tf.get_variable('kernel', shape=[1, 1, in_channel, h_params.one_by_one_out_filters])
-        b = tf.get_variable('bias', shape=[h_params.one_by_one_out_filters])
-        filter_one_by_one = tf.nn.tanh(conv2d(features, W) + b)
+    filtered = conv_layer.conv2d(filtered_one,
+                                 filter_size=[1, 1],
+                                 in_channel=h_params.one_by_one_out_filters,
+                                 out_channel=1,
+                                 name="cnn_down_sample",
+                                 activation_fn=tf.nn.elu)
 
-        s.add_kernel_summary(W, vs.name)
+    # filtered = tf.add(filtered, features)
 
+    filtered = tf.squeeze(filtered, axis=-1)
     # Concatenate the different filtered time_series
-    features = tf.unstack(filter_one_by_all, axis=3)
-    features.extend(tf.unstack(filter_one_by_one, axis=3))
-    features = tf.concat(features, axis=2)
+    # filtered = tf.unstack(filtered_one, axis=3)
+    # filtered.extend(tf.unstack(filtered_all, axis=3))
+    # filtered = tf.concat(filtered, axis=2)
 
-    # apply linera transformation
-    for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size[:-1]):
-        layers_output = []
-        with tf.variable_scope('ml_{}'.format(layer_idx), reuse=True) as vs:
-            # Iterate over the timestamp
-            for t in range(0, h_params.sequence_length):
-                layer_output = tf.contrib.layers.fully_connected(inputs=features[:, t, :],
-                                                                 num_outputs=h_layer_dim,
-                                                                 activation_fn=leaky_relu,
-                                                                 weights_initializer=initializers.xavier_initializer(),
-                                                                 # normalizer_fn=tf.contrib.layers.layer_norm,
-                                                                 scope=vs)
 
-                # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
-                #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
-
-                layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
-            # proved to be the same weights
-            s.add_hidden_layers_summary(layers_output, vs.name, weight=tf.get_variable("weights"))
-        features = tf.concat(layers_output, axis=1)
-
-    # TODO: linear layer transformation
-    # TODO: try attention transfomration
-    # TODO: try an highway networks
+    # apply linera transformation to reduce the dimension
+    # layers_output = []
+    # with tf.variable_scope('ml', reuse=True) as vs:
+    #     # Iterate over the timestamp
+    #     for t in range(0, h_params.sequence_length):
+    #         layer_output = tf.contrib.layers.fully_connected(inputs=filtered[:, t, :],
+    #                                                          num_outputs=h_params.h_layer_size[-2],
+    #                                                          activation_fn=leaky_relu,
+    #                                                          weights_initializer=initializers.xavier_initializer(),
+    #                                                          # normalizer_fn=tf.contrib.layers.layer_norm,
+    #                                                          scope=vs)
+    #         # apply dropout
+    #         # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+    #         #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
+    #
+    #         layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
+    #     # proved to be the same weights
+    #     s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=tf.get_variable("weights"))
+    # filtered = tf.concat(layers_output, axis=1)
 
 
     with tf.variable_scope('rnn') as vs:
@@ -77,11 +85,11 @@ def cnn_rnn(h_params, mode, features_map, target):
         # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
-        outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(features, axis=1),
+        outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),
                                                     sequence_length=sequence_length,
                                                     dtype=tf.float32)
 
-        s.add_hidden_layers_summary(tensors=outputs, name=vs.name + "_output")
+        s.add_hidden_layer_summary(activation=outputs[-1], name=vs.name + "_output")
         s.add_hidden_layers_summary(tensors=states, name=vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:

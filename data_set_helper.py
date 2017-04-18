@@ -1,7 +1,6 @@
 import tensorflow as tf
 
 
-KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 
 def get_feature_columns(h_params):
     feature_columns = []
@@ -9,7 +8,7 @@ def get_feature_columns(h_params):
     if "rnn" in h_params.model_type:
         feature_columns.append(tf.contrib.layers.real_valued_column(column_name="length",
                                                                     dimension=1, dtype=tf.int64))
-        for key in KEYS:
+        for key in h_params.KEYS:
             feature_columns.append(tf.contrib.layers.real_valued_column(column_name=key,
                                                                         dimension=h_params.sequence_length, dtype=tf.float32))
         feature_columns.append(tf.contrib.layers.real_valued_column(column_name="label",
@@ -33,7 +32,9 @@ def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
             batch_size=batch_size,
             features=features,
             reader=tf.TFRecordReader,
-            randomize_input=True,
+            randomize_input=False
+
+            ,
             num_epochs=num_epochs,
             # queue_capacity=10 + batch_size * 10,
             name="read_batch_features_{}".format(mode))

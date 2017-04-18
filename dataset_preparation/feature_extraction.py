@@ -72,7 +72,7 @@ def run(path_conf):
         accumulator_distributio = ef.accumulation_distribution_line(data)
 
         # Compute prince relative returns
-        data = ef.compute_return(data)
+        # data = ef.compute_return(data)
 
         # Insert new features
         data.insert(len(data.keys()), 'MA_long', long_MA)
