@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 import models.layers.conv_layer as conv_layer
+import models.layers.dense_layer as dense_layer
 
 
 def leaky_relu(x, alpha=.5, max_value=None):
@@ -10,6 +11,13 @@ def leaky_relu(x, alpha=.5, max_value=None):
     alpha: slope of negative section.
     '''
     return tf.maximum(alpha * x, x)
+
+
+def is_training(mode):
+    if mode == tf.contrib.learn.ModeKeys.INFER:
+        return False
+    else:
+        return True
 
 def cnn_rnn(h_params, mode, features_map, target):
     features = features_map['features']
@@ -32,6 +40,8 @@ def cnn_rnn(h_params, mode, features_map, target):
     #                              out_channel=h_params.one_by_one_out_filters,
     #                              name="highway_cnn_one")
 
+
+
     filtered_one = conv_layer.gated_conv2d(features,
                                            filter_size=[1, 1],
                                            in_channel=in_channel,
@@ -48,31 +58,19 @@ def cnn_rnn(h_params, mode, features_map, target):
     # filtered = tf.add(filtered, features)
 
     filtered = tf.squeeze(filtered, axis=-1)
+    filtered = tf.contrib.layers.batch_norm(filtered,
+                                            center=True,
+                                            scale=False,
+                                            is_training=is_training(mode),
+                                            scope='bn')
     # Concatenate the different filtered time_series
     # filtered = tf.unstack(filtered_one, axis=3)
     # filtered.extend(tf.unstack(filtered_all, axis=3))
     # filtered = tf.concat(filtered, axis=2)
 
 
-    # apply linera transformation to reduce the dimension
-    # layers_output = []
-    # with tf.variable_scope('ml', reuse=True) as vs:
-    #     # Iterate over the timestamp
-    #     for t in range(0, h_params.sequence_length):
-    #         layer_output = tf.contrib.layers.fully_connected(inputs=filtered[:, t, :],
-    #                                                          num_outputs=h_params.h_layer_size[-2],
-    #                                                          activation_fn=leaky_relu,
-    #                                                          weights_initializer=initializers.xavier_initializer(),
-    #                                                          # normalizer_fn=tf.contrib.layers.layer_norm,
-    #                                                          scope=vs)
-    #         # apply dropout
-    #         # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
-    #         #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
-    #
-    #         layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
-    #     # proved to be the same weights
-    #     s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=tf.get_variable("weights"))
-    # filtered = tf.concat(layers_output, axis=1)
+    # dense_layer.dense_layer_over_time(filtered, h_params,
+    #                                   activation_fn=leaky_relu)
 
 
     with tf.variable_scope('rnn') as vs:
@@ -82,7 +80,7 @@ def cnn_rnn(h_params, mode, features_map, target):
         cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
                                        forget_bias=1.0,
                                        activation=tf.nn.tanh)
-        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),

@@ -1,6 +1,30 @@
 import tensorflow as tf
 from tensorflow.python.ops import nn, init_ops, standard_ops
 from tensorflow.contrib.layers.python.layers import initializers
+import utils.summarizer as s
+
+
+# apply linera transformation to reduce the dimension
+def dense_layer_over_time(x, h_params, activation_fn=tf.nn.elu):
+    layers_output = []
+    with tf.variable_scope('ml', reuse=True) as vs:
+        # Iterate over the timestamp
+        for t in range(0, h_params.sequence_length):
+            layer_output = tf.contrib.layers.fully_connected(inputs=x[:, t, :],
+                                                             num_outputs=h_params.h_layer_size[-2],
+                                                             activation_fn=activation_fn,
+                                                             weights_initializer=initializers.xavier_initializer(),
+                                                             # normalizer_fn=tf.contrib.layers.layer_norm,
+                                                             scope=vs)
+            # apply dropout
+            # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+            #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
+
+            layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
+        # proved to be the same weights
+        s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=tf.get_variable("weights"))
+    return tf.concat(layers_output, axis=1)
+
 
 class Dense(object):
     """Densely-connected layer class.
