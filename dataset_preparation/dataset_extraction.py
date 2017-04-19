@@ -15,7 +15,11 @@ h_parmas = net_hparams.create_hparams()
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
-COMPANY_NAME = "goldman"
+COMPANY_NAME = "IBM"
+EXAMPLE_FN_NAME = "create_example_sequencial"
+OUTPUT_NAME_SUFFIX = '_seq'
+# example_fn = create_example
+# output_name_suffix = ''
 
 def create_tfrecords_file(input, output_file_name, example_fn, path='../data'):
     """
@@ -84,9 +88,11 @@ def split_train_valid_test(data):
     data_train = data.ix[:pd.Timestamp("2012-01-01")]
     return data_train, data_valid, data_test
 
-def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
+def run(file_name, example_fn_name, output_name_suffix, path = '../data/stock'):
+    example_fn = eval(example_fn_name)
 
     full_path = os.path.join(path, file_name) + '-fea.csv'
+    print("processing {}".format(full_path))
     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
     # data = pd.read_csv(full_path, header=None, parse_dates=True, index_col="Date", names=KEYS, skiprows=1)
@@ -136,10 +142,4 @@ def run(file_name, example_fn, output_name_suffix, path = '../data/stock'):
     # )
 
 if __name__ == "__main__":
-
-    example_fn = create_example_sequencial
-    output_name_suffix = '_seq'
-    # example_fn = create_example
-    # output_name_suffix = ''
-
-    run(COMPANY_NAME, example_fn, output_name_suffix, path=INPUT_DIR)
+    run(COMPANY_NAME, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, path=INPUT_DIR)
