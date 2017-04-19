@@ -17,7 +17,9 @@ HParams = namedtuple(
         "model_type",
         "one_by_one_out_filters",
         "one_by_all_out_filters",
-        "KEYS"
+        "KEYS",
+        "end_time",
+        "start_time"
     ])
 
 def create_hparams():
@@ -36,5 +38,7 @@ def create_hparams():
         l2_reg=0.00,
         one_by_one_out_filters=5,
         one_by_all_out_filters=3,
-        KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
+        KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short'],
+        end_time="2017-01-01",
+        start_time="2002-01-01"
     )

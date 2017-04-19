@@ -1,6 +1,4 @@
 __author__ = 'andompesta'
-
-import configparser
 import os
 import pandas as pd
 import utils.extraction_functions as ef
@@ -45,9 +43,7 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
     return long_moving_average, medium_moving_average, short_moving_average, long_MACD, short_MACD, long_PPO, short_PPO
 
 
-def run(path_conf):
-    prop = configparser.ConfigParser()
-    prop.read(path_conf)
+def run():
     companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
 
@@ -115,8 +111,8 @@ def run(path_conf):
         # data = ef.remove_unused_key(data, remove_keys=['Adj_Close', 'Adj_Volume', 'Adj_High', 'Adj_Low', 'Adj_Open', 'Ex-Dividend'])
 
         # truncate the data accordingly to the value specified
-        start_date = pd.Timestamp(prop.get('DATE', 'start_time'))
-        end_date = pd.Timestamp(prop.get('DATE', 'end_time'))
+        start_date = pd.Timestamp(h_params.start_time)
+        end_date = pd.Timestamp(h_params.end_time)
         data = ef.truncate_timeseries(data, start_date, end_date)
         ef.check_data(data)
 
@@ -125,4 +121,4 @@ def run(path_conf):
 
 
 if __name__ == '__main__':
-    run('../conf.ini')
+    run()

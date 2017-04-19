@@ -53,7 +53,7 @@ def cnn_rnn(h_params, mode, features_map, target):
                                  in_channel=h_params.one_by_one_out_filters,
                                  out_channel=1,
                                  name="cnn_down_sample",
-                                 activation_fn=tf.nn.elu)
+                                 activation_fn=tf.nn.tanh)
 
     # filtered = tf.add(filtered, features)
 

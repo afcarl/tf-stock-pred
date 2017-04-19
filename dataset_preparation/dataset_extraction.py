@@ -12,7 +12,6 @@ from sklearn.model_selection import train_test_split
 # KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 h_parmas = net_hparams.create_hparams()
-TIME_STAMP=20
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
@@ -43,7 +42,7 @@ def create_example(row,  keys):
     """
     label = int(row['Label'])
 
-    for i in range(1,20):
+    for i in range(1, h_parmas.sequence_length):
         row = row.drop("Label-{}".format(i))
     row = row.drop("Label")
 
@@ -59,7 +58,7 @@ def create_example_sequencial(row, keys):
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    features = np.array(row).reshape(TIME_STAMP, len(keys)+1)[::-1]
+    features = np.array(row).reshape(h_parmas.sequence_length, len(keys)+1)[::-1]
     example = tf.train.Example()
     example.features.feature["length"].int64_list.value.append(features.shape[0])
 
