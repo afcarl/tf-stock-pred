@@ -88,7 +88,7 @@ def split_train_valid_test(data):
     data_train = data.ix[:pd.Timestamp("2012-01-01")]
     return data_train, data_valid, data_test
 
-def run(file_name, example_fn_name, output_name_suffix, path = '../data/stock'):
+def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock', out_path='../data'):
     example_fn = eval(example_fn_name)
 
     full_path = os.path.join(path, file_name) + '-fea.csv'
@@ -103,14 +103,14 @@ def run(file_name, example_fn_name, output_name_suffix, path = '../data/stock'):
         input=train,
         output_file_name="train"+output_name_suffix+".tfrecords",
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
-        path=os.path.join(OUTPUT_DIR, file_name))
+        path=os.path.join(out_path, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
         output_file_name="test"+output_name_suffix+".tfrecords",
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
-        path=os.path.join(OUTPUT_DIR, file_name)
+        path=os.path.join(out_path, file_name)
     )
 
     # Create train.tfrecords
@@ -118,7 +118,7 @@ def run(file_name, example_fn_name, output_name_suffix, path = '../data/stock'):
         input=valid,
         output_file_name="valid"+output_name_suffix+".tfrecords",
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
-        path=os.path.join(OUTPUT_DIR, file_name)
+        path=os.path.join(out_path, file_name)
     )
 
 
@@ -132,14 +132,14 @@ def run(file_name, example_fn_name, output_name_suffix, path = '../data/stock'):
     #     input=(X_train, y_train),
     #     output_file_name="train.tfrecords",
     #     example_fn=create_example,
-    #     path=os.path.join(OUTPUT_DIR, file_name))
+    #     path=os.path.join(out_path, file_name))
     #
     # create_tfrecords_file(
     #     input=(X_test, y_test),
     #     output_file_name="valid.tfrecords",
     #     example_fn=create_example,
-    #     path=os.path.join(OUTPUT_DIR, file_name)
+    #     path=os.path.join(out_path, file_name)
     # )
 
 if __name__ == "__main__":
-    run(COMPANY_NAME, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, path=INPUT_DIR)
+    run(COMPANY_NAME, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, in_path=INPUT_DIR, out_path=OUTPUT_DIR)
