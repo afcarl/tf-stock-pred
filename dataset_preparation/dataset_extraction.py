@@ -91,7 +91,7 @@ def split_train_valid_test(data):
 def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock', out_path='../data'):
     example_fn = eval(example_fn_name)
 
-    full_path = os.path.join(path, file_name) + '-fea.csv'
+    full_path = os.path.join(in_path, file_name) + '-fea.csv'
     print("processing {}".format(full_path))
     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
