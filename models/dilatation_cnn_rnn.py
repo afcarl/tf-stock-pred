@@ -27,30 +27,22 @@ def cnn_rnn(h_params, mode, features_map, target):
     features = tf.expand_dims(features, -1)         # add channel dim
 
 
-    #apply conv_filtering
-
-    # filtered_one = conv_layer.highway_conv2d(features,
-    #                              filter_size=1,
-    #                              in_channel=in_channel,
-    #                              out_channel=h_params.one_by_one_out_filters,
-    #                              name="highway_cnn_one")
 
 
 
-    filtered_one = conv_layer.gated_conv1d(features,
-                                           filter_size=1,
+
+    filtered_one = conv_layer.gated_conv2d(features,
+                                           filter_size=[1, 1],
                                            in_channel=in_channel,
                                            out_channel=h_params.one_by_one_out_filters,
                                            name="gated_cnn")
 
-    filtered = conv_layer.conv1d(filtered_one,
-                                 filter_size=1,
+    filtered = conv_layer.conv2d(filtered_one,
+                                 filter_size=[1, 1],
                                  in_channel=h_params.one_by_one_out_filters,
                                  out_channel=1,
                                  name="cnn_down_sample",
                                  activation_fn=tf.nn.tanh)
-
-    # filtered = tf.add(filtered, features)     # skip-trough connection
 
     filtered = tf.squeeze(filtered, axis=-1)
     filtered = tf.contrib.layers.batch_norm(filtered,
@@ -58,14 +50,7 @@ def cnn_rnn(h_params, mode, features_map, target):
                                             scale=False,
                                             is_training=is_training(mode),
                                             scope='bn')
-    # Concatenate the different filtered time_series
-    # filtered = tf.unstack(filtered_one, axis=3)
-    # filtered.extend(tf.unstack(filtered_all, axis=3))
-    # filtered = tf.concat(filtered, axis=2)
 
-
-    # dense_layer.dense_layer_over_time(filtered, h_params,
-    #                                   activation_fn=leaky_relu)
 
 
     with tf.variable_scope('rnn') as vs:

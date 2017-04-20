@@ -24,6 +24,7 @@ def get_feature_columns(h_params):
 
 
 def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
+    print("reading file {}".format(input_files))
     def input_fn():
         features = tf.contrib.layers.create_feature_spec_for_parsing(get_feature_columns(h_params))
 
@@ -32,11 +33,9 @@ def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
             batch_size=batch_size,
             features=features,
             reader=tf.TFRecordReader,
-            randomize_input=False
-
-            ,
+            randomize_input=False,
             num_epochs=num_epochs,
-            # queue_capacity=10 + batch_size * 10,
+            queue_capacity=100000 + batch_size * 10,
             name="read_batch_features_{}".format(mode))
 
         # This is an ugly hack because of a current bug in tf.learn

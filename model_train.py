@@ -24,7 +24,7 @@ TIMESTAMP = int(time.time())
 MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 
-COMPANY_NAME = 'goldman'
+COMPANY_NAME = 'apple'
 
 TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_seq.tfrecords"))
 VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_seq.tfrecords"))

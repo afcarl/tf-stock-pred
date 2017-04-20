@@ -5,7 +5,7 @@ import utils.extraction_functions as ef
 import net_hparams
 import numpy as np
 
-COMPANY_NAME = 'IBM'
+COMPANY_NAME = 'apple'
 
 def compute_label(close_time_serie, experiment_type):
     '''
@@ -29,9 +29,9 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
     :param medium_term: days for the medium MA
     :param short_term: days for the short MA
     '''
-    long_term *= 60*7
-    medium_term *= 60*7
-    short_term *= 60*7
+    # long_term *= 60*7
+    # medium_term *= 60*7
+    # short_term *= 60*7
 
     long_moving_average = ef.compute_moving_average(close_time_serie, long_term)
     medium_moving_average = ef.compute_moving_average(close_time_serie, medium_term)
@@ -85,7 +85,7 @@ def run(company_name, path='../data/stock'):
     data = ef.truncate_timeseries(data, pd.Timestamp('2001-01-01'), pd.Timestamp('2017-01-01'))
 
     keys = list(data.keys())
-    for i in range(1, 60):
+    for i in range(1, h_params.sequence_length):
         for key in keys:
             data.insert(len(data.keys()), key+'-{}'.format(i), ef.compute_delay(data[key], i))
             # data.insert(len(data.keys()), 'Close-{}'.format(i), ef.compute_delay(data['Close'], i))

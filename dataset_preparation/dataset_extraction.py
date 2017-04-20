@@ -15,7 +15,7 @@ h_parmas = net_hparams.create_hparams()
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
-COMPANY_NAME = "IBM"
+COMPANY_NAME = "apple"
 EXAMPLE_FN_NAME = "create_example_sequencial"
 OUTPUT_NAME_SUFFIX = '_seq'
 # example_fn = create_example

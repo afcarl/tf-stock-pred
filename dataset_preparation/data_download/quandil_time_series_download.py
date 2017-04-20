@@ -15,7 +15,7 @@ company = {'apple':'WIKI/AAPL', 'google':'WIKI/GOOGL', 'yahoo':'WIKI/YHOO', 'gol
 collapse = 'daily'
 OUTPUT_PATH = "../../data/stock"
 
-for company_name in ['goldman']:
+for company_name in ['google']:
     data = quandl.get(company[company_name], authtoken="zTEsWpGga_5eqG6YCkRS", start_date="2000-01-01", end_date="2017-04-01", collapse=collapse)
     # data = data.rename(columns={company[company_name].split('/')[1]: "Close"})
     data = ef.remove_unused_key(data, remove_keys=['Split Ratio', 'Ex-Dividend'])
