@@ -7,18 +7,18 @@ import numpy as np
 
 COMPANY_NAME = 'apple'
 
-def compute_label(close_time_serie, experiment_type):
+def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''
     compute the label
     :param close_time_serie: closing price time-series
     :param experiment_type: type of the experiment: classification or regression
     '''
     # Compute the labels
-    if experiment_type == 'classification':
+    if "class" in experiment_type:
         labels = ef.compute_label(close_time_serie)
     else:
         labels = ef.compute_delay(close_time_serie, -1)
-        labels = ef.compute_return(labels)
+        labels = return_fn(labels)
     return labels
 
 def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short_term=10):
@@ -45,7 +45,7 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
     return long_moving_average, medium_moving_average, short_moving_average, long_MACD, short_MACD, long_PPO, short_PPO
 
 
-def run(company_name, path='../data/stock'):
+def run(company_name, path='../data/stock', return_fn=ef.compute_return):
     companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
                  'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
 
@@ -64,12 +64,12 @@ def run(company_name, path='../data/stock'):
     print("extract feature of %s" % company_name)
 
 
-    labels = compute_label(data[primary_key], h_params.experiment_type)
     (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
     accumulator_distributio = ef.accumulation_distribution_line(data)
+    labels = compute_label(data[primary_key], h_params.e_type, return_fn=return_fn)
 
     # Compute prince relative returns
-    data = ef.compute_return(data)
+    data = return_fn(data)
 
     # Insert new features
     data.insert(len(data.keys()), 'MA_long', long_MA)
@@ -118,7 +118,7 @@ def run(company_name, path='../data/stock'):
     ef.check_data(data)
 
     data = data.astype(np.float32)
-    data.to_csv(os.path.join(path, company_name) + '-fea.csv')
+    data.to_csv(os.path.join(path, company_name) + '-{}-fea.csv'.format(h_params.e_type))
 
 
 if __name__ == '__main__':

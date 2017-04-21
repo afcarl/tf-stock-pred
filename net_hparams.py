@@ -13,32 +13,34 @@ HParams = namedtuple(
         "dropout",
         "l2_reg",
         "sequence_length",
-        "experiment_type",
         "model_type",
         "one_by_one_out_filters",
         "one_by_all_out_filters",
         "KEYS",
         "end_time",
-        "start_time"
+        "start_time",
+        "e_type"
     ])
 
 def create_hparams():
     return HParams(
-        experiment_type="classification",
-        model_type="cnn_rnn",
+        model_type="deep_rnn",
         sequence_length=20,
-        batch_size=100,
-        eval_batch_size=100,
+        batch_size=50,
+        eval_batch_size=50,
         optimizer="Adam",
         learning_rate=0.001,
-        h_layer_size=[[7, 5], [5, 10], 40, 60],
+        h_layer_size=[15, 10, 60],
         input_size=18,
-        num_class=2,
-        dropout=0.0,
+        num_class={"reg":1,
+                   "class":2},
+        dropout=0.5,
         l2_reg=0.00,
         one_by_one_out_filters=5,
         one_by_all_out_filters=3,
         KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short'],
         end_time="2017-01-01",
-        start_time="2002-01-01"
+        start_time="2002-01-01",
+        e_type="reg"
+
     )

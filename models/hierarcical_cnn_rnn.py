@@ -84,7 +84,7 @@ def h_cnn_rnn(h_params, mode, features_map, target):
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
-                                                   num_outputs=h_params.num_class,
+                                                   num_outputs=h_params.num_class[h_params.e_type],
                                                    activation_fn=None,
                                                    scope=vs)
         s.add_hidden_layer_summary(logits, vs.name)
@@ -92,7 +92,7 @@ def h_cnn_rnn(h_params, mode, features_map, target):
 
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
-            return predictions, None
+            return predictions, Noneh_params.num_class
 
         elif mode == tf.contrib.learn.ModeKeys.TRAIN:
             t_accuracy = tf.contrib.metrics.streaming_accuracy(predictions, target)

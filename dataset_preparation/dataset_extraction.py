@@ -17,7 +17,7 @@ INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
 COMPANY_NAME = "apple"
 EXAMPLE_FN_NAME = "create_example_sequencial"
-OUTPUT_NAME_SUFFIX = '_seq'
+OUTPUT_NAME_SUFFIX = 'seq'
 # example_fn = create_example
 # output_name_suffix = ''
 
@@ -44,7 +44,7 @@ def create_example(row,  keys):
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    label = int(row['Label'])
+    label = row['Label']
 
     for i in range(1, h_parmas.sequence_length):
         row = row.drop("Label-{}".format(i))
@@ -53,7 +53,14 @@ def create_example(row,  keys):
 
     features = np.array(row[keys])
     example = tf.train.Example()
-    example.features.feature["label"].int64_list.value.append(label)
+
+    if "class" in h_parmas.e_type:
+        example.features.feature['label'].int64_list.value.append(np.int64(label))
+    elif "reg" in h_parmas.e_type:
+        example.features.feature['label'].float_list.value.extend(np.float32(label))
+    else:
+        return ValueError("error in the experiment type")
+
     example.features.feature["features"].float_list.value.extend(features)
     return example
 
@@ -71,7 +78,13 @@ def create_example_sequencial(row, keys):
 
     # fl_value = example.feature_lists.feature_list["label"]
     # fl_value.feature.add().int64_list.value.extend(np.int64(features[:, -1]))
-    example.features.feature['label'].int64_list.value.extend(np.int64(features[:, -1]))
+
+    if "class" in h_parmas.e_type:
+        example.features.feature['label'].int64_list.value.extend(np.int64(features[:, -1]))
+    elif "reg" in h_parmas.e_type:
+        example.features.feature['label'].float_list.value.extend(np.float32(features[:, -1]))
+    else:
+        return ValueError("error in the experiment type")
     return example
     # write the new example
 
@@ -91,7 +104,7 @@ def split_train_valid_test(data):
 def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock', out_path='../data'):
     example_fn = eval(example_fn_name)
 
-    full_path = os.path.join(in_path, file_name) + '-fea.csv'
+    full_path = os.path.join(in_path, file_name) + '-{}-fea.csv'.format(h_parmas.e_type)
     print("processing {}".format(full_path))
     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
@@ -101,14 +114,14 @@ def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock
 
     create_tfrecords_file(
         input=train,
-        output_file_name="train"+output_name_suffix+".tfrecords",
+        output_file_name="train_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(out_path, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
-        output_file_name="test"+output_name_suffix+".tfrecords",
+        output_file_name="test_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(out_path, file_name)
     )
@@ -116,7 +129,7 @@ def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock
     # Create train.tfrecords
     create_tfrecords_file(
         input=valid,
-        output_file_name="valid"+output_name_suffix+".tfrecords",
+        output_file_name="valid_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
         example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
         path=os.path.join(out_path, file_name)
     )

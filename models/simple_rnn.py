@@ -48,7 +48,7 @@ def simple_rnn(h_params, mode, features_map, target):
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
-                                                   num_outputs=h_params.num_class,
+                                                   num_outputs=h_params.num_class[h_params.e_type],
                                                    activation_fn=None,
                                                    scope=vs)
         s.add_hidden_layer_summary(logits, vs.name)

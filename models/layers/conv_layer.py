@@ -89,6 +89,44 @@ def gated_conv2d_trough_time(x, filter_size, in_channel, out_channel, rate=[1,1]
         return tf.multiply(H, T)
 
 
+def deepwise_gated_conv1d(x, filter_size, in_channel, channel_multiply, strides=[1, 1, 1, 1], padding="VALID",
+                          name="deepwise_gated_cnn"):
+    with tf.variable_scope(name) as vs:
+        filter_shape = [1, filter_size,in_channel, channel_multiply]
+        # variable definition
+        W = tf.get_variable('weight_filter', shape=filter_shape,
+                            initializer=tf.contrib.layers.xavier_initializer_conv2d(),
+                            regularizer=None)
+
+        b = tf.get_variable('bias_filter', shape=[in_channel*channel_multiply])
+
+        W_t = tf.get_variable('weight_gate', shape=filter_shape,
+                              initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
+        b_t = tf.get_variable('bias_gate', shape=in_channel*channel_multiply)
+
+        # convolution
+        conv_filter = tf.nn.depthwise_conv2d(x, W, strides, padding)
+        conv_gate = tf.nn.depthwise_conv2d(x, W_t, strides, padding)
+
+        conv_filter = tf.add(conv_filter, b)
+        conv_gate = tf.add(conv_gate, b_t)
+
+        # gates
+        H = tf.tanh(conv_filter, name='activation')
+        T = tf.sigmoid(conv_gate, name='transform_gate')
+
+        # debugging
+        tf.summary.histogram(vs.name + "_weight_filter", W)
+        tf.summary.histogram(vs.name + '_bias_filter', b)
+        tf.summary.histogram(vs.name + '_weight_gate', W_t)
+        tf.summary.histogram(vs.name + '_bias_gate', b_t)
+        s._norm_summary(W, vs.name)
+        s._norm_summary(W_t, vs.name)
+
+        return tf.multiply(H, T)
+
+
 def gated_conv1d(x, filter_size, in_channel, out_channel, strides=[1, 1, 1, 1], padding="VALID", name="gated_cnn"):
     with tf.variable_scope(name) as vs:
         filter_shape = [1, filter_size,in_channel, out_channel]

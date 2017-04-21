@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
-
+import models.layers.output_layer as output_layer
 
 def parametric_relu(_x):
   alphas = tf.get_variable('alpha', _x.get_shape()[-1],
@@ -36,7 +36,7 @@ def deep_rnn(h_params, mode, features_map, target):
             for t in range(0, h_params.sequence_length):
                 layer_output = tf.contrib.layers.fully_connected(inputs=features[:, t, :],
                                                                 num_outputs=h_layer_dim,
-                                                                activation_fn=leaky_relu,
+                                                                activation_fn=tf.tanh,
                                                                 weights_initializer=initializers.xavier_initializer(),
                                                                 # normalizer_fn=tf.contrib.layers.layer_norm,
                                                                 scope=vs)
@@ -56,34 +56,24 @@ def deep_rnn(h_params, mode, features_map, target):
         cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
                                        forget_bias=1.0,
                                        activation=tf.nn.tanh)
-        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(features, axis=1),
                                                     sequence_length=sequence_length,
                                                     dtype=tf.float32)
 
-        s.add_hidden_layers_summary(outputs, vs.name + "_output")
+        s.add_hidden_layer_summary(activation=outputs[-1], name=vs.name + "_output")
         s.add_hidden_layers_summary(states, vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
-                                                   num_outputs=h_params.num_class,
+                                                   num_outputs=h_params.num_class[h_params.e_type],
                                                    activation_fn=None,
                                                    scope=vs)
         s.add_hidden_layer_summary(logits, vs.name)
-        predictions = tf.argmax(tf.nn.softmax(logits), 1)
 
-
-        if mode == tf.contrib.learn.ModeKeys.INFER:
-            return predictions, None
-
-        elif mode == tf.contrib.learn.ModeKeys.TRAIN:
-            t_accuracy = tf.contrib.metrics.streaming_accuracy(predictions, target)
-            tf.summary.scalar('train_accuracy', tf.reduce_mean(t_accuracy))
-
-        # Calculate the binary cross-entropy loss
-        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=target, name='entropy')
+        predictions, losses = output_layer.losses(logits, target, mode=mode, h_params=h_params)
 
     mean_loss = tf.reduce_mean(losses, name='mean_loss')
     return predictions, mean_loss

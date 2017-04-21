@@ -11,6 +11,7 @@ from models.deep_rnn import deep_rnn
 from models.simple_rnn import simple_rnn
 from models.cnn_rnn import cnn_rnn
 from models.hierarcical_cnn_rnn import h_cnn_rnn
+from models.depthwise_cnn_rnn import dw_cnn_rnn
 
 from utils.eval_metric import create_evaluation_metrics
 
@@ -25,9 +26,10 @@ MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
 
 
 COMPANY_NAME = 'apple'
+OUTPUT_NAME_SUFFIX = 'seq'
 
-TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_seq.tfrecords"))
-VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_seq.tfrecords"))
+TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_{}_{}.tfrecords"))
+VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_{}_{}.tfrecords"))
 
 
 tf.logging.set_verbosity(FLAGS.loglevel)
@@ -52,7 +54,7 @@ def main(unused_argv):
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
-        input_files=[TRAIN_FILE],
+        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type), VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
         batch_size=hparams.batch_size,
         num_epochs=FLAGS.num_epochs,
         h_params=hparams
@@ -60,19 +62,19 @@ def main(unused_argv):
 
     input_fn_eval = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.EVAL,
-        input_files=[VALIDATION_FILE],
+        input_files=[VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
         batch_size=hparams.eval_batch_size,
         num_epochs=1,
         h_params=hparams)
 
     input_fn_infer = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.INFER,
-        input_files=[VALIDATION_FILE],
+        input_files=[VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
         batch_size=hparams.eval_batch_size,
         num_epochs=1,
         h_params=hparams)
 
-    eval_metrics = create_evaluation_metrics()
+    eval_metrics = create_evaluation_metrics(hparams.e_type)
 
     eval_monitor = tf.contrib.learn.monitors.ValidationMonitor(
         input_fn=input_fn_eval,

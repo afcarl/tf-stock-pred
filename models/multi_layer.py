@@ -18,11 +18,11 @@ def leaky_relu(x, alpha=0.001):
     '''
     return tf.maximum(alpha * x, x)
 
-def mlp(hparams, mode, features_map, target):
+def mlp(h_params, mode, features_map, target):
     layers_output = []
     features = features_map['features']
     # features = features_map
-    for layer_idx, h_layer_dim in enumerate(hparams.h_layer_size):
+    for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size):
         if layer_idx == 0:
             layer_input = features
         else:
@@ -39,8 +39,8 @@ def mlp(hparams, mode, features_map, target):
                                                              # normalizer_fn=tf.contrib.layers.layer_norm,
                                                              scope=vs)
 
-            if hparams.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
-                layer_output = tf.nn.dropout(layer_output, keep_prob=1-hparams.dropout)
+            if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+                layer_output = tf.nn.dropout(layer_output, keep_prob=1-h_params.dropout)
 
             s.add_hidden_layer_summary(activation=layer_output, weight=tf.get_variable("weights"), name=vs.name)
             layers_output.append(layer_output)
@@ -48,7 +48,7 @@ def mlp(hparams, mode, features_map, target):
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=layers_output[-1],
-                                                   num_outputs=hparams.num_class,
+                                                   num_outputs=h_params.num_class[h_params.e_type],
                                                    activation_fn=None,
                                                    scope=vs)
         s.add_hidden_layer_summary(activation=logits, name=vs.name)
