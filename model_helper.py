@@ -38,7 +38,7 @@ def create_model_fn(hparams, model_impl):
 
             return model_fn_lib.ModelFnOps(
                 mode=mode,
-                predictions=predictions,
+                predictions={'predictions':predictions},
                 loss=loss,
                 train_op=train_op
             )
@@ -53,7 +53,7 @@ def create_model_fn(hparams, model_impl):
             return model_fn_lib.ModelFnOps(mode=mode,
                                            predictions={'predictions':predictions,
                                                         'features':features_map['features'],
-                                                        'targets':features_map['label']
+                                                        'targets':targets
                                                         }
                                            )
 
@@ -64,13 +64,11 @@ def create_model_fn(hparams, model_impl):
                 features_map,
                 targets)
 
-            eval_metric_ops = {
-                # those are returned by the estimator
-                "accuracy": tf.contrib.metrics.streaming_accuracy(predictions, targets)
-            }
-
             return model_fn_lib.ModelFnOps(mode=mode,
-                                           predictions=predictions,
-                                           loss=loss,
-                                           eval_metric_ops=eval_metric_ops)
+                                           predictions={'predictions':predictions,
+                                                        'features':features_map['features'],
+                                                        'targets':targets
+                                                        },
+                                           loss=loss
+                                           )
     return model_fn

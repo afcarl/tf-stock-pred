@@ -24,7 +24,7 @@ HParams = namedtuple(
 
 def create_hparams():
     return HParams(
-        model_type="deep_rnn",
+        model_type="dw_cnn_rnn",
         sequence_length=20,
         batch_size=50,
         eval_batch_size=50,
