@@ -38,7 +38,10 @@ def create_model_fn(hparams, model_impl):
 
             return model_fn_lib.ModelFnOps(
                 mode=mode,
-                predictions={'predictions':predictions},
+                predictions={'predictions':predictions,
+                            'features':features_map['features'],
+                            'targets':targets
+                            },
                 loss=loss,
                 train_op=train_op
             )

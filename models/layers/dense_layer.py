@@ -4,6 +4,45 @@ from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 
 
+
+def highway_dense_layer(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
+    layers_output = []
+    with tf.variable_scope(scope_name) as vs:
+        W = tf.get_variable('weight_filter', shape=[in_size, out_size],
+                            initializer=tf.contrib.layers.xavier_initializer(),
+                            regularizer=None)
+
+        b = tf.get_variable('bias_filter', shape=[out_size])
+
+        W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
+                              initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
+        b_t = tf.get_variable('bias_gate', shape=[out_size])
+
+        # Iterate over the timestamp
+        for t in range(0, sequence_length):
+
+            H = activation_fn(tf.add(tf.matmul(x[:, t, :], W), b), name="activation")
+            T = tf.sigmoid(tf.add(tf.matmul(x[:, t, :], W_t), b_t), name="transit_gate")
+            # C = tf.subtract(1.0, T, name='carry_gate')
+            layer_output = tf.multiply(H, T)
+                                  # layer_output = tf.add(tf.multiply(H, T), tf.multiply(x[:, t, :], C))
+            # apply dropout
+            # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+            #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
+
+            layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
+        # proved to be the same weights
+        s.add_hidden_layer_summary(layers_output[-1], vs.name)
+
+        tf.summary.histogram(vs.name + "_weight_filter", W)
+        tf.summary.histogram(vs.name + '_bias_filter', b)
+        tf.summary.histogram(vs.name + '_weight_gate', W_t)
+        tf.summary.histogram(vs.name + '_bias_gate', b_t)
+        s._norm_summary(W, vs.name)
+        s._norm_summary(W_t, vs.name)
+    return tf.concat(layers_output, axis=1)
+
 # apply linera transformation to reduce the dimension
 def dense_layer_over_time(x, h_params, activation_fn=tf.nn.elu):
     layers_output = []

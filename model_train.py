@@ -54,7 +54,7 @@ def main(unused_argv):
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
-        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type), VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
+        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
         batch_size=hparams.batch_size,
         num_epochs=FLAGS.num_epochs,
         h_params=hparams

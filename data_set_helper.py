@@ -37,7 +37,7 @@ def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
             batch_size=batch_size,
             features=features,
             reader=tf.TFRecordReader,
-            randomize_input=False,
+            randomize_input=True,
             num_epochs=num_epochs,
             queue_capacity=100000 + batch_size * 10,
             name="read_batch_features_{}".format(mode))

@@ -5,7 +5,7 @@ import utils.extraction_functions as ef
 import net_hparams
 import numpy as np
 
-COMPANY_NAME = 'apple'
+COMPANY_NAME = 'ICU_medical'
 
 def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''

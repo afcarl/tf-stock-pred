@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 
 # KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
-h_parmas = net_hparams.create_hparams()
+h_params = net_hparams.create_hparams()
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"
@@ -46,7 +46,7 @@ def create_example(row,  keys):
     """
     label = row['Label']
 
-    for i in range(1, h_parmas.sequence_length):
+    for i in range(1, h_params.sequence_length):
         row = row.drop("Label-{}".format(i))
     row = row.drop("Label")
 
@@ -54,9 +54,9 @@ def create_example(row,  keys):
     features = np.array(row[keys])
     example = tf.train.Example()
 
-    if "class" in h_parmas.e_type:
+    if "class" in h_params.e_type:
         example.features.feature['label'].int64_list.value.append(np.int64(label))
-    elif "reg" in h_parmas.e_type:
+    elif "reg" in h_params.e_type:
         example.features.feature['label'].float_list.value.extend(np.float32(label))
     else:
         return ValueError("error in the experiment type")
@@ -69,7 +69,7 @@ def create_example_sequencial(row, keys):
     Creates a training example.
     Returnsthe a tensorflow.Example Protocol Buffer object.
     """
-    features = np.array(row).reshape(h_parmas.sequence_length, len(keys)+1)[::-1]
+    features = np.array(row).reshape(h_params.sequence_length, len(keys)+1)[::-1]
     example = tf.train.Example()
     example.features.feature["length"].int64_list.value.append(features.shape[0])
 
@@ -79,9 +79,9 @@ def create_example_sequencial(row, keys):
     # fl_value = example.feature_lists.feature_list["label"]
     # fl_value.feature.add().int64_list.value.extend(np.int64(features[:, -1]))
 
-    if "class" in h_parmas.e_type:
+    if "class" in h_params.e_type:
         example.features.feature['label'].int64_list.value.extend(np.int64(features[:, -1]))
-    elif "reg" in h_parmas.e_type:
+    elif "reg" in h_params.e_type:
         example.features.feature['label'].float_list.value.extend(np.float32(features[:, -1]))
     else:
         return ValueError("error in the experiment type")
@@ -104,7 +104,7 @@ def split_train_valid_test(data):
 def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock', out_path='../data'):
     example_fn = eval(example_fn_name)
 
-    full_path = os.path.join(in_path, file_name) + '-{}-fea.csv'.format(h_parmas.e_type)
+    full_path = os.path.join(in_path, file_name) + '-{}-fea.csv'.format(h_params.e_type)
     print("processing {}".format(full_path))
     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
 
@@ -114,23 +114,23 @@ def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock
 
     create_tfrecords_file(
         input=train,
-        output_file_name="train_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
-        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
+        output_file_name="train_{}_{}.tfrecords".format(output_name_suffix, h_params.e_type),
+        example_fn=functools.partial(example_fn, keys=h_params.KEYS),
         path=os.path.join(out_path, file_name))
 
     # Create test.tfrecords
     create_tfrecords_file(
         input=test,
-        output_file_name="test_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
-        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
+        output_file_name="test_{}_{}.tfrecords".format(output_name_suffix, h_params.e_type),
+        example_fn=functools.partial(example_fn, keys=h_params.KEYS),
         path=os.path.join(out_path, file_name)
     )
 
     # Create train.tfrecords
     create_tfrecords_file(
         input=valid,
-        output_file_name="valid_{}_{}.tfrecords".format(output_name_suffix, h_parmas.e_type),
-        example_fn=functools.partial(example_fn, keys=h_parmas.KEYS),
+        output_file_name="valid_{}_{}.tfrecords".format(output_name_suffix, h_params.e_type),
+        example_fn=functools.partial(example_fn, keys=h_params.KEYS),
         path=os.path.join(out_path, file_name)
     )
 
@@ -155,4 +155,5 @@ def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock
     # )
 
 if __name__ == "__main__":
-    run(COMPANY_NAME, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, in_path=INPUT_DIR, out_path=OUTPUT_DIR)
+    for company_name in ['apple', 'goldman', 'ICU_medical']:
+        run(company_name, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, in_path=INPUT_DIR, out_path=OUTPUT_DIR)

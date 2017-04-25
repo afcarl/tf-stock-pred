@@ -47,7 +47,7 @@ def main(unused_argv):
         model_fn=model_fn,
         model_dir=FLAGS.model_dir,
         config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.6,
-                                          save_checkpoints_secs=180))
+                                          save_checkpoints_secs=30))
 
     input_fn_test = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.INFER,
