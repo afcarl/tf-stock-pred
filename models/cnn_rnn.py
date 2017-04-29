@@ -3,21 +3,8 @@ from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 import models.layers.conv_layer as conv_layer
 import models.layers.output_layer as output_layer
+from utils.func_utils import leaky_relu, is_training
 
-
-def leaky_relu(x, alpha=.5, max_value=None):
-    '''ReLU.
-
-    alpha: slope of negative section.
-    '''
-    return tf.maximum(alpha * x, x)
-
-
-def is_training(mode):
-    if mode == tf.contrib.learn.ModeKeys.INFER:
-        return False
-    else:
-        return True
 
 def cnn_rnn(h_params, mode, features_map, target):
     features = features_map['features']

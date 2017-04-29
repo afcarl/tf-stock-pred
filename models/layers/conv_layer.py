@@ -60,12 +60,14 @@ def gated_conv2d_trough_time(x, filter_size, in_channel, out_channel, rate=[1,1]
                             initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             regularizer=None)
 
-        b = tf.get_variable('bias_filter', shape=[out_channel])
+        b = tf.get_variable('bias_filter', shape=[out_channel],
+                            initializer=tf.constant_initializer(-0.))
 
         W_t = tf.get_variable('weight_gate', shape=filter_shape,
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-        b_t = tf.get_variable('bias_gate', shape=out_channel)
+        b_t = tf.get_variable('bias_gate', shape=out_channel,
+                              initializer=tf.constant_initializer(-0.))
 
         # convolution
         conv_filter = dilatete_trough_time_conv2d(x, W, strides, padding)
@@ -98,12 +100,14 @@ def deepwise_gated_conv1d(x, filter_size, in_channel, channel_multiply, strides=
                             initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             regularizer=None)
 
-        b = tf.get_variable('bias_filter', shape=[in_channel*channel_multiply])
+        b = tf.get_variable('bias_filter', shape=[in_channel*channel_multiply],
+                            initializer=tf.constant_initializer(-0.))
 
         W_t = tf.get_variable('weight_gate', shape=filter_shape,
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-        b_t = tf.get_variable('bias_gate', shape=in_channel*channel_multiply)
+        b_t = tf.get_variable('bias_gate', shape=in_channel*channel_multiply,
+                              initializer=tf.constant_initializer(-0.))
 
         # convolution
         conv_filter = tf.nn.depthwise_conv2d(x, W, strides, padding)
@@ -135,12 +139,14 @@ def gated_conv1d(x, filter_size, in_channel, out_channel, strides=[1, 1, 1, 1], 
                             initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             regularizer=None)
 
-        b = tf.get_variable('bias_filter', shape=[out_channel])
+        b = tf.get_variable('bias_filter', shape=[out_channel],
+                            initializer=tf.constant_initializer(0.))
 
         W_t = tf.get_variable('weight_gate', shape=filter_shape,
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-        b_t = tf.get_variable('bias_gate', shape=out_channel)
+        b_t = tf.get_variable('bias_gate', shape=out_channel,
+                              initializer=tf.constant_initializer(0.))
 
         # convolution
         conv_filter = tf.nn.conv2d(x, W, strides, padding)
@@ -174,7 +180,8 @@ def highway_conv1d(x, filter_size, in_channel, out_channel, strides=[1, 1, 1, 1]
                             initializer=tf.contrib.layers.xavier_initializer_conv2d(),
                             regularizer=None)
 
-        b = tf.get_variable('bias_filter', shape=[out_channel])
+        b = tf.get_variable('bias_filter', shape=[out_channel],
+                            initializer=tf.constant_initializer(0.))
 
         W_t = tf.get_variable('weight_gate', shape=filter_shape,
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())

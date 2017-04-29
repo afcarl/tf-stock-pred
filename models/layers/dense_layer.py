@@ -3,30 +3,71 @@ from tensorflow.python.ops import nn, init_ops, standard_ops
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 
-
-
-def highway_dense_layer(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
+def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
     layers_output = []
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
                             initializer=tf.contrib.layers.xavier_initializer(),
                             regularizer=None)
 
-        b = tf.get_variable('bias_filter', shape=[out_size])
+        b = tf.get_variable('bias_filter',
+                            shape=[out_size],
+                            initializer=tf.constant_initializer(0.))
 
         W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-        b_t = tf.get_variable('bias_gate', shape=[out_size])
+        b_t = tf.get_variable('bias_gate',
+                              shape=[out_size],
+                              initializer=tf.constant_initializer(0.))
 
         # Iterate over the timestamp
         for t in range(0, sequence_length):
 
             H = activation_fn(tf.add(tf.matmul(x[:, t, :], W), b), name="activation")
             T = tf.sigmoid(tf.add(tf.matmul(x[:, t, :], W_t), b_t), name="transit_gate")
-            # C = tf.subtract(1.0, T, name='carry_gate')
             layer_output = tf.multiply(H, T)
-                                  # layer_output = tf.add(tf.multiply(H, T), tf.multiply(x[:, t, :], C))
+
+            # apply dropout
+            # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
+            #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
+
+            layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
+        # proved to be the same weights
+        s.add_hidden_layer_summary(layers_output[-1], vs.name)
+
+        tf.summary.histogram(vs.name + "_weight_filter", W)
+        tf.summary.histogram(vs.name + '_bias_filter', b)
+        tf.summary.histogram(vs.name + '_weight_gate', W_t)
+        tf.summary.histogram(vs.name + '_bias_gate', b_t)
+        s._norm_summary(W, vs.name)
+        s._norm_summary(W_t, vs.name)
+    return tf.concat(layers_output, axis=1)
+
+def highway_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu, init_bias=-3.):
+    layers_output = []
+    with tf.variable_scope(scope_name) as vs:
+        W = tf.get_variable('weight_filter', shape=[in_size, out_size],
+                            initializer=tf.contrib.layers.xavier_initializer(),
+                            regularizer=None)
+
+        b = tf.get_variable('bias_filter', shape=[out_size],
+                            initializer=tf.constant_initializer(0.))
+
+        W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
+                              initializer=tf.contrib.layers.xavier_initializer_conv2d())
+
+        b_t = tf.get_variable('bias_gate', shape=[out_size],
+                              initializer=tf.constant_initializer(init_bias)
+                              )
+
+        # Iterate over the timestamp
+        for t in range(0, sequence_length):
+
+            H = activation_fn(tf.add(tf.matmul(x[:, t, :], W), b), name="activation")
+            T = tf.sigmoid(tf.add(tf.matmul(x[:, t, :], W_t), b_t), name="transit_gate")
+            C = tf.subtract(1.0, T, name='carry_gate')
+            layer_output = tf.add(tf.multiply(H, T), tf.multiply(x[:, t, :], C))
             # apply dropout
             # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
             #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
@@ -44,24 +85,23 @@ def highway_dense_layer(x, in_size, out_size, sequence_length, scope_name, activ
     return tf.concat(layers_output, axis=1)
 
 # apply linera transformation to reduce the dimension
-def dense_layer_over_time(x, h_params, activation_fn=tf.nn.elu):
+def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
     layers_output = []
-    with tf.variable_scope('ml', reuse=True) as vs:
-        # Iterate over the timestamp
-        for t in range(0, h_params.sequence_length):
-            layer_output = tf.contrib.layers.fully_connected(inputs=x[:, t, :],
-                                                             num_outputs=h_params.h_layer_size[-2],
-                                                             activation_fn=activation_fn,
-                                                             weights_initializer=initializers.xavier_initializer(),
-                                                             # normalizer_fn=tf.contrib.layers.layer_norm,
-                                                             scope=vs)
-            # apply dropout
-            # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
-            #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
+    with tf.variable_scope(scope_name) as vs:
+        W = tf.get_variable('weight_filter', shape=[in_size, out_size],
+                            initializer=tf.contrib.layers.xavier_initializer())
+
+        b = tf.get_variable('bias_filter', shape=[out_size],
+                            initializer=tf.constant_initializer(0.))
+
+
+        for t in range(0, sequence_length):
+            layer_output = standard_ops.add(standard_ops.matmul(x[:, t, :], W), b)
+            layer_output = activation_fn(layer_output)
 
             layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
         # proved to be the same weights
-        s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=tf.get_variable("weights"))
+        s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=W)
     return tf.concat(layers_output, axis=1)
 
 
