@@ -35,7 +35,7 @@ def cnn_rnn(h_params, mode, features_map, target):
                                  in_channel=h_params.one_by_one_out_filters,
                                  out_channel=1,
                                  name="cnn_down_sample",
-                                 activation_fn=tf.nn.relu)
+                                 activation_fn=leaky_relu)
 
     # filtered = tf.add(filtered, features)     # skip-trough connection
 
@@ -59,11 +59,11 @@ def cnn_rnn(h_params, mode, features_map, target):
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
         # Define a lstm cell with tensorflow
-        cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
+        cell = tf.contrib.rnn.GRUCell(h_params.h_layer_size[-1],
                                        forget_bias=1.0,
                                        activation=tf.nn.tanh)
-        #
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+
+        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),
@@ -71,7 +71,10 @@ def cnn_rnn(h_params, mode, features_map, target):
                                                     dtype=tf.float32)
 
         s.add_hidden_layer_summary(activation=outputs[-1], name=vs.name + "_output")
-        s.add_hidden_layers_summary(tensors=states, name=vs.name + "_state")
+        if isinstance(states, list) or isinstance(states, tuple):
+            s.add_hidden_layer_summary(states.h, vs.name + "_state")
+        else:
+            s.add_hidden_layer_summary(states, vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],

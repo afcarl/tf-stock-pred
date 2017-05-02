@@ -70,8 +70,8 @@ def compute_return(data):
     :return: 
     '''
     shifted_data = data.shift(1)
-    # data = (data - shifted_data)/shifted_data
-    data = (data - shifted_data)
+    data = (data - shifted_data)/shifted_data
+    # data = (data - shifted_data)
     return data
 
 def compute_label(close_time_series):

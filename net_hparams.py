@@ -24,13 +24,13 @@ HParams = namedtuple(
 
 def create_hparams():
     return HParams(
-        model_type="deep_rnn",
+        model_type="cnn_rnn",
         sequence_length=20,
         batch_size=50,
         eval_batch_size=50,
         optimizer="Adam",
         learning_rate=0.01,
-        h_layer_size=[18, 18,  64],
+        h_layer_size=[18, 18, 64],
         input_size=18,
         num_class={"reg":1,
                    "class":2},

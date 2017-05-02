@@ -164,8 +164,8 @@ def gated_conv1d(x, filter_size, in_channel, out_channel, strides=[1, 1, 1, 1], 
         tf.summary.histogram(vs.name + '_bias_filter', b)
         tf.summary.histogram(vs.name + '_weight_gate', W_t)
         tf.summary.histogram(vs.name + '_bias_gate', b_t)
-        s._norm_summary(W, vs.name)
-        s._norm_summary(W_t, vs.name)
+        s._norm_summary(W, vs.name + '_filter')
+        s._norm_summary(W_t, vs.name + '_gate')
 
         return tf.multiply(H, T)
 

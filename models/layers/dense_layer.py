@@ -102,6 +102,8 @@ def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, act
             layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
         # proved to be the same weights
         s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=W)
+        tf.summary.histogram(vs.name + '_bias', b)
+
     return tf.concat(layers_output, axis=1)
 
 

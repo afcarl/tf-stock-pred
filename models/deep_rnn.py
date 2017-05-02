@@ -20,10 +20,15 @@ def deep_rnn(h_params, mode, features_map, target):
     in_size = h_params.input_size
     filtered = features
     for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size[:-1]):
+        # filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
+        #                                                      sequence_length=h_params.sequence_length,
+        #                                                      scope_name='dense_{}'.format(layer_idx),
+        #                                                      activation_fn=tf.nn.elu)
+
         filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
-                                                             sequence_length=h_params.sequence_length,
-                                                             scope_name='dense_{}'.format(layer_idx),
-                                                             activation_fn=tf.nn.elu)
+                                                     sequence_length=h_params.sequence_length,
+                                                     scope_name='dense_{}'.format(layer_idx),
+                                                     activation_fn=tf.nn.sigmoid)
         in_size = h_layer_dim
 
     with tf.variable_scope('rnn') as vs:
@@ -32,7 +37,7 @@ def deep_rnn(h_params, mode, features_map, target):
         # Define a lstm cell with tensorflow
         cell = tf.contrib.rnn.GRUCell(h_params.h_layer_size[-1],
                                        activation=tf.nn.tanh)
-        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),

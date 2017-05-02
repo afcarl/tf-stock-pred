@@ -5,7 +5,7 @@ import utils.extraction_functions as ef
 import net_hparams
 import numpy as np
 
-COMPANY_NAME = 'ICU_medical'
+COMPANY_NAME = 'apple'
 
 def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''
@@ -46,14 +46,6 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
 
 
 def run(company_name, path='../data/stock', return_fn=ef.compute_return):
-    companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
-                 'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
-
-
-    header_names = ['Date', 'Open', 'High', 'Low', 'Close', 'Volume',
-                    'Ex-Dividend', 'Split Ratio',
-                    'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume']
-
     primary_key = 'Close'
     h_params = net_hparams.create_hparams()
 
@@ -122,5 +114,8 @@ def run(company_name, path='../data/stock', return_fn=ef.compute_return):
 
 
 if __name__ == '__main__':
+    # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
+    #              'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
+
     run(COMPANY_NAME)
 

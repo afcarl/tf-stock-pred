@@ -22,7 +22,7 @@ tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train st
 FLAGS = tf.flags.FLAGS
 
 TIMESTAMP = int(time.time())
-MODEL_DIR = os.path.abspath("./runs_" + str(TIMESTAMP))
+MODEL_DIR = os.path.abspath("./debug/runs_" + str(TIMESTAMP))
 
 
 COMPANY_NAME = 'apple'
