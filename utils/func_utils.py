@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-def leaky_relu(x, leakiness=.5, name=''):
+def leaky_relu(x, leakiness=.1, name=''):
     '''ReLU.
 
     alpha: slope of negative section.

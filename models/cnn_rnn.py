@@ -51,10 +51,6 @@ def cnn_rnn(h_params, mode, features_map, target):
     # filtered = tf.concat(filtered, axis=2)
 
 
-    # dense_layer.dense_layer_over_time(filtered, h_params,
-    #                                   activation_fn=leaky_relu)
-
-
     with tf.variable_scope('rnn') as vs:
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
