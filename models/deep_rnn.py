@@ -3,8 +3,8 @@ from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 import models.layers.output_layer as output_layer
 import models.layers.dense_layer as dense_layer
-from utils.func_utils import leaky_relu, is_training
-
+import utils.func_utils as fu
+from utils.func_utils import leaky_relu
 
 
 def deep_rnn(h_params, mode, features_map, target):
@@ -24,25 +24,23 @@ def deep_rnn(h_params, mode, features_map, target):
         #                                                      sequence_length=h_params.sequence_length,
         #                                                      scope_name='dense_{}'.format(layer_idx),
         #                                                      activation_fn=tf.nn.elu)
+        batch_norm_data = fu.create_BNParams(apply=True,
+                                             phase=fu.is_training(mode))
 
         filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
                                                      sequence_length=h_params.sequence_length,
                                                      scope_name='dense_{}'.format(layer_idx),
-                                                     activation_fn=leaky_relu)
+                                                     activation_fn=tf.nn.elu,
+                                                     batch_norm=batch_norm_data)
         in_size = h_layer_dim
 
-    filtered = tf.contrib.layers.batch_norm(filtered,
-                                            center=True,
-                                            scale=True,
-                                            is_training=is_training(mode),
-                                            scope='bn')
     with tf.variable_scope('rnn') as vs:
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
         # Define a lstm cell with tensorflow
         cell = tf.contrib.rnn.GRUCell(h_params.h_layer_size[-1],
                                       activation=tf.nn.tanh)
-        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),

@@ -2,18 +2,31 @@ import tensorflow as tf
 from tensorflow.python.ops import nn, init_ops, standard_ops
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
+import utils.func_utils as fu
 
-def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
+
+
+def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
+                                activation_fn=tf.nn.elu,
+                                batch_norm=fu.create_BNParams()
+                                ):
+    '''
+    Apply a gated liner layer to the input.
+    activattion_fn(mul(x,W)) * sigmoid(mul(x,W_t))
+    The gate W_T should learn how much to filter the input x
+    :param x: input mini-batch
+    :param in_size: input size or feature number
+    :param out_size: output size -> respect to a highway net can be what I what
+    :param sequence_length: timestamp number
+    :param scope_name: name of the scope of this layer
+    :param activation_fn: activation function to apply
+    :param batch_norm: apply batch norm before computing the activation of both W and W_t
+    '''
     layers_output = []
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
                             initializer=tf.contrib.layers.xavier_initializer(),
                             regularizer=None)
-
-        b = tf.get_variable('bias_filter',
-                            shape=[out_size],
-                            initializer=tf.constant_initializer(0.))
-
         W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
@@ -21,11 +34,32 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
                               shape=[out_size],
                               initializer=tf.constant_initializer(0.))
 
+
+        if not batch_norm.apply:
+            b = tf.get_variable('bias_filter',
+                                shape=[out_size],
+                                initializer=tf.constant_initializer(0.))
+
+
         # Iterate over the timestamp
         for t in range(0, sequence_length):
 
-            H = activation_fn(tf.add(tf.matmul(x[:, t, :], W), b), name="activation")
-            T = tf.sigmoid(tf.add(tf.matmul(x[:, t, :], W_t), b_t), name="transit_gate")
+            H_linear = tf.matmul(x[:, t, :], W)
+            T_linear = tf.matmul(x[:, t, :], W_t)
+
+            if batch_norm.apply:
+                H_norm = tf.contrib.layers.batch_norm(H_linear,
+                                                 center=batch_norm.center,
+                                                 scale=batch_norm.scale,
+                                                 is_training=batch_norm.phase,
+                                                 scope=vs.name + '_bn')
+                H = activation_fn(H_norm, name="activation")
+            else:
+                H = activation_fn(tf.add(H_linear, b), name="activation")
+
+            T = tf.sigmoid(tf.add(T_linear, b_t), name="transit_gate")
+
+
             layer_output = tf.multiply(H, T)
 
             # apply dropout
@@ -37,9 +71,11 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
         s.add_hidden_layer_summary(layers_output[-1], vs.name)
 
         tf.summary.histogram(vs.name + "_weight_filter", W)
-        tf.summary.histogram(vs.name + '_bias_filter', b)
         tf.summary.histogram(vs.name + '_weight_gate', W_t)
         tf.summary.histogram(vs.name + '_bias_gate', b_t)
+        if not batch_norm.apply:
+            tf.summary.histogram(vs.name + '_bias_filter', b)
+
         s._norm_summary(W, vs.name)
         s._norm_summary(W_t, vs.name)
     return tf.concat(layers_output, axis=1)
@@ -105,24 +141,54 @@ def dense_layer_over_time_std(x, in_size, out_size, sequence_length, scope_name,
 
 
 
-def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
+def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
+                          activation_fn=tf.nn.elu,
+                          batch_norm=fu.create_BNParams()
+                          ):
+    '''
+    Apply a dense layer over all the time_stamp.
+    This is for filtering the timeseries
+    :param x: input data
+    :param in_size: input size or number of feature
+    :param out_size: output size
+    :param sequence_length: length of the sequence. Number of timestemp to iterate of
+    :param scope_name: scope name of this transformation
+    :param activation_fn: activation function
+    :param batch_norm: named indicating if applying batch normalization and the phase(true if training, false if tensing)
+    :return: 
+    '''
     layers_output = []
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
                             initializer=tf.contrib.layers.xavier_initializer())
 
-        b = tf.get_variable('bias_filter', shape=[out_size],
-                            initializer=tf.constant_initializer(0.))
+        if not batch_norm.apply:
+            b = tf.get_variable('bias_filter', shape=[out_size],
+                                initializer=tf.constant_initializer(0.))
 
 
         for t in range(0, sequence_length):
-            layer_output = standard_ops.add(standard_ops.matmul(x[:, t, :], W), b)
-            layer_output = activation_fn(layer_output)
+            layer_output = standard_ops.matmul(x[:, t, :], W)
+
+            if batch_norm.apply:
+                layer_output = tf.contrib.layers.batch_norm(layer_output,
+                                                            center=batch_norm.center,
+                                                            scale=batch_norm.scale,
+                                                            is_training=batch_norm.phase,
+                                                            scope=vs.name + '_bn')
+            else:
+                # apply batch norm
+                layer_output = standard_ops.add(layer_output, b)
+
+            if activation_fn:
+                layer_output = activation_fn(layer_output)
 
             layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
+
         # proved to be the same weights
         s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=W)
-        tf.summary.histogram(vs.name + '_bias', b)
+        if not batch_norm.apply:
+            tf.summary.histogram(vs.name + '_bias', b)
 
     return tf.concat(layers_output, axis=1)
 

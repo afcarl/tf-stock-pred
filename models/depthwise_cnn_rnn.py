@@ -3,6 +3,7 @@ from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 import models.layers.conv_layer as conv_layer
 import models.layers.output_layer as output_layer
+import utils.func_utils as fu
 
 
 def leaky_relu(x, alpha=.5, max_value=None):
@@ -22,6 +23,8 @@ def is_training(mode):
 def dw_cnn_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
+    batch_norm_data = fu.create_BNParams(apply=True,
+                                         phase=fu.is_training(mode))
 
     channel_multiply = 3
     features = tf.expand_dims(features, -2)         # add channel with dim
@@ -31,14 +34,17 @@ def dw_cnn_rnn(h_params, mode, features_map, target):
 
 
 
-    filtered = conv_layer.deepwise_gated_conv1d(features,
-                                                    filter_size=1,
-                                                    in_channel=h_params.input_size,
-                                                    channel_multiply=channel_multiply,
-                                                    name="deepwise_gated_cnn")
+    filtered = conv_layer.depthwise_gated_conv1d(features,
+                                                 filter_size=1,
+                                                 in_channel=h_params.input_size,
+                                                 channel_multiply=channel_multiply,
+                                                 name="deepwise_gated_cnn",
+                                                 activation_fn=tf.nn.elu,
+                                                 batch_norm=batch_norm_data
+                                                 )
 
 
-
+    # reshape the data to a normal form -> move the input channel to the feature space
     filtered = tf.reshape(filtered, shape=[tf.shape(filtered)[0],       # last batch is not full
                                            h_params.sequence_length,
                                            h_params.input_size,
@@ -49,14 +55,10 @@ def dw_cnn_rnn(h_params, mode, features_map, target):
                                  in_channel=channel_multiply,
                                  out_channel=1,
                                  name="cnn_down_sample",
-                                 activation_fn=tf.nn.elu)
+                                 activation_fn=tf.nn.elu,
+                                 batch_norm=batch_norm_data)
 
     filtered = tf.squeeze(filtered, axis=-1)
-    filtered = tf.contrib.layers.batch_norm(filtered,
-                                            center=True,
-                                            scale=False,
-                                            is_training=is_training(mode),
-                                            scope='bn')
 
 
 
@@ -67,7 +69,7 @@ def dw_cnn_rnn(h_params, mode, features_map, target):
         cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
                                        forget_bias=1.0,
                                        activation=tf.nn.tanh)
-        #
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(filtered, axis=1),

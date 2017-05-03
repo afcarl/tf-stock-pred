@@ -26,8 +26,8 @@ def create_hparams():
     return HParams(
         model_type="deep_rnn",
         sequence_length=20,
-        batch_size=50,
-        eval_batch_size=50,
+        batch_size=30,
+        eval_batch_size=30,
         optimizer="Adam",
         learning_rate=0.01,
         h_layer_size=[15, 10, 64],

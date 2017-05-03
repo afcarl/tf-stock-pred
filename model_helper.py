@@ -13,7 +13,7 @@ def create_train_op(loss, hparams):
         loss=loss,                                          # loss function used
         global_step=tf.contrib.framework.get_global_step(), # number of batches seen so far
         learning_rate=hparams.learning_rate,                # learning rate
-        clip_gradients=10.0,                                # clip gradient to a max value
+        clip_gradients=5.0,                                # clip gradient to a max value
         optimizer=hparams.optimizer)                        # optimizer used
     return train_op
 
