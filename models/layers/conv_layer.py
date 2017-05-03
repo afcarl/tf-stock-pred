@@ -260,7 +260,11 @@ def conv1d(x, filter_size, in_channel, out_channel,
 
         x_filtered = tf.nn.conv2d(x, W, strides, padding)
         if batch_norm.apply:
-            activation = tf.contrib.batch_norm(x_filtered)
+            activation = tf.contrib.layers.batch_norm(x_filtered,
+                                                      center=batch_norm.center,
+                                                      scale=batch_norm.scale,
+                                                      is_training=batch_norm.phase,
+                                                      scope=vs.name + '_bn')
         else:
             activation = tf.add(x_filtered, b)
 
