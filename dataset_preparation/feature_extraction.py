@@ -21,7 +21,7 @@ def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
         labels = return_fn(labels)
     return labels
 
-def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short_term=10):
+def compute_moving_average(close_time_serie, long_term=100, medium_term=26, short_term=12):
     '''
     compute the moving average of the given time series for different time interval
     :param close_time_serie: closing price time-series
@@ -33,16 +33,17 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=5, short
     # medium_term *= 60*7
     # short_term *= 60*7
 
-    long_moving_average = ef.compute_moving_average(close_time_serie, long_term)
-    medium_moving_average = ef.compute_moving_average(close_time_serie, medium_term)
-    short_moving_average = ef.compute_moving_average(close_time_serie, short_term)
+    long_moving_average = ef.compute_exponential_moving_average(close_time_serie, long_term)
+    medium_moving_average = ef.compute_exponential_moving_average(close_time_serie, medium_term)
+    short_moving_average = ef.compute_exponential_moving_average(close_time_serie, short_term)
     # Compute the moving average indicator
     long_MACD = short_moving_average - long_moving_average
     short_MACD = short_moving_average - medium_moving_average
     long_PPO = long_MACD / long_moving_average
     short_PPO = short_MACD / medium_moving_average
+    sl = ef.compute_exponential_moving_average(short_MACD, 9)
 
-    return long_moving_average, medium_moving_average, short_moving_average, long_MACD, short_MACD, long_PPO, short_PPO
+    return long_moving_average, medium_moving_average, short_moving_average, long_MACD, short_MACD, long_PPO, short_PPO, sl
 
 
 def run(company_name, path='../data/stock', return_fn=ef.compute_return):
@@ -56,7 +57,7 @@ def run(company_name, path='../data/stock', return_fn=ef.compute_return):
     print("extract feature of %s" % company_name)
 
 
-    (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO) = compute_moving_average(data[primary_key])
+    (long_MA, medium_MA, short_MA, long_MACD, short_MACD, long_PPO, short_PPO, sl) = compute_moving_average(data[primary_key])
     accumulator_distributio = ef.accumulation_distribution_line(data)
     labels = compute_label(data[primary_key], h_params.e_type, return_fn=return_fn)
 
@@ -71,6 +72,7 @@ def run(company_name, path='../data/stock', return_fn=ef.compute_return):
     data.insert(len(data.keys()), 'MACD_short', short_MACD)
     data.insert(len(data.keys()), 'PPO_long', long_PPO)
     data.insert(len(data.keys()), 'PPO_short', short_PPO)
+    data.insert(len(data.keys()), 'SL', sl)
     data.insert(5, 'A/D', accumulator_distributio)
     data.insert(len(data.keys()), 'Label', labels)
 
@@ -117,5 +119,5 @@ if __name__ == '__main__':
     # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
     #              'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
 
-    run(COMPANY_NAME)
+    run(COMPANY_NAME, return_fn=lambda x:x)
 
