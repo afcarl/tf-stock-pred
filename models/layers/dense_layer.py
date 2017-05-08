@@ -44,11 +44,13 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
                             initializer=tf.contrib.layers.xavier_initializer(),
-                            collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES])
+                            collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES],
+                            trainable=True)
 
         W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
                               initializer=tf.contrib.layers.xavier_initializer(),
-                              collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES])
+                              collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES],
+                              trainable=True)
 
         if not batch_norm.apply:
             b_t = tf.get_variable('bias_gate',
@@ -118,29 +120,10 @@ def highway_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
                                   batch_norm=fu.create_BNParams()
                                   ):
     with tf.variable_scope(scope_name) as vs:
-        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = dense_layer_over_time(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
         x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm, is_highway=True)
 
     return x
-
-# apply linera transformation to reduce the dimension
-
-
-def dense_layer_over_time_std(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu):
-    layers_output = []
-    with tf.variable_scope(scope_name, reuse=True) as vs:
-        for t in range(0, sequence_length):
-            layer_output = tf.contrib.layers.fully_connected(inputs=x[:, t, :],
-                                              num_outputs=out_size,
-                                              activation_fn=activation_fn,
-                                              scope=vs)
-
-            layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
-        # proved to be the same weights
-        s.add_hidden_layer_summary(layers_output[-1], vs.name, weight=tf.get_variable("weights"))
-        tf.summary.histogram(vs.name + '_bias', tf.get_variable("biases"))
-
-    return tf.concat(layers_output, axis=1)
 
 
 
@@ -163,11 +146,17 @@ def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
     layers_output = []
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
-                            initializer=tf.contrib.layers.xavier_initializer())
+                            initializer=tf.contrib.layers.xavier_initializer(),
+                            collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES],
+                            trainable=True
+                            )
 
         if not batch_norm.apply:
             b = tf.get_variable('bias_filter', shape=[out_size],
-                                initializer=tf.constant_initializer(0.))
+                                initializer=tf.constant_initializer(0.),
+                                collections=[GraphKeys.BIASES, GraphKeys.GLOBAL_VARIABLES],
+                                trainable=True
+                                )
 
 
         for t in range(0, sequence_length):
