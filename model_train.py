@@ -28,6 +28,7 @@ MODEL_DIR = os.path.abspath("./debug/runs_" + str(TIMESTAMP))
 COMPANY_NAME = 'apple'
 OUTPUT_NAME_SUFFIX = 'seq'
 
+
 TRAIN_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "train_{}_{}.tfrecords"))
 VALIDATION_FILE = os.path.abspath(os.path.join(FLAGS.input_dir, COMPANY_NAME, "valid_{}_{}.tfrecords"))
 
@@ -49,8 +50,7 @@ def main(unused_argv):
     estimator = tf.contrib.learn.Estimator(
         model_fn=model_fn,
         model_dir=MODEL_DIR,
-        config=tf.contrib.learn.RunConfig(gpu_memory_fraction=0.6,
-                                          save_checkpoints_secs=180))
+        config=tf.contrib.learn.RunConfig(save_checkpoints_secs=320))
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
