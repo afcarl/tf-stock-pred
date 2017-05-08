@@ -6,6 +6,7 @@ import net_hparams
 import numpy as np
 
 COMPANY_NAME = 'apple'
+RETUNR_FN = lambda x:x
 
 def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''
@@ -119,5 +120,5 @@ if __name__ == '__main__':
     # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
     #              'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
 
-    run(COMPANY_NAME, return_fn=lambda x:x)
+    run(COMPANY_NAME, return_fn=RETUNR_FN)
 

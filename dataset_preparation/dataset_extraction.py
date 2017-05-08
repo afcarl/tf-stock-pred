@@ -155,5 +155,5 @@ def run(file_name, example_fn_name, output_name_suffix, in_path = '../data/stock
     # )
 
 if __name__ == "__main__":
-    for company_name in ['apple', 'goldman', 'ICU_medical']:
+    for company_name in ['apple']:
         run(company_name, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, in_path=INPUT_DIR, out_path=OUTPUT_DIR)

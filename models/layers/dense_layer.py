@@ -11,16 +11,16 @@ import utils.func_utils as fu
 def gated_res_net_layer(x, in_size, out_size, sequence_length, scope_name,
                         activation_fn=tf.nn.elu,
                         batch_norm=fu.create_BNParams()):
+    orig_x = x
 
     with tf.variable_scope(scope_name) as vs:
-        orig_x = x
         x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
         x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm)
 
-        with tf.variable_scope('sub_add'):
-            x += orig_x
+    with tf.variable_scope('sub_add'):
+        x += orig_x
 
-
+    return x
 
 
 def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
@@ -58,7 +58,6 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
 
         # Iterate over the timestamp
         for t in range(0, sequence_length):
-
             H_linear = tf.matmul(x[:, t, :], W)
             T_linear = tf.matmul(x[:, t, :], W_t)
 
