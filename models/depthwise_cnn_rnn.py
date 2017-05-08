@@ -6,20 +6,6 @@ import models.layers.output_layer as output_layer
 import utils.func_utils as fu
 
 
-def leaky_relu(x, alpha=.5, max_value=None):
-    '''ReLU.
-
-    alpha: slope of negative section.
-    '''
-    return tf.maximum(alpha * x, x)
-
-
-def is_training(mode):
-    if mode == tf.contrib.learn.ModeKeys.INFER:
-        return False
-    else:
-        return True
-
 def dw_cnn_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
@@ -66,9 +52,8 @@ def dw_cnn_rnn(h_params, mode, features_map, target):
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
         # Define a lstm cell with tensorflow
-        cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
-                                       forget_bias=1.0,
-                                       activation=tf.nn.tanh)
+        cell = tf.contrib.rnn.GRUCell(h_params.h_layer_size[-1],
+                                      activation=tf.nn.tanh)
         cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
@@ -77,7 +62,10 @@ def dw_cnn_rnn(h_params, mode, features_map, target):
                                                     dtype=tf.float32)
 
         s.add_hidden_layer_summary(activation=outputs[-1], name=vs.name + "_output")
-        s.add_hidden_layers_summary(tensors=states, name=vs.name + "_state")
+        if isinstance(states, list) or isinstance(states, tuple):
+            s.add_hidden_layer_summary(states.h, vs.name + "_state")
+        else:
+            s.add_hidden_layer_summary(states, vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],

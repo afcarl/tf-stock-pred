@@ -7,7 +7,7 @@ INPUT_DIR = "./data/stock"
 OUTPUT_DIR = "./data"
 COMPANY_NAME = "IBM"
 EXAMPLE_FN_NAME = "create_example_sequencial"
-OUTPUT_NAME_SUFFIX = '_seq'
+OUTPUT_NAME_SUFFIX = 'seq'
 
 
 # fe.run(COMPANY_NAME, path=INPUT_DIR)

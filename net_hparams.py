@@ -30,7 +30,7 @@ def create_hparams():
         eval_batch_size=30,
         optimizer="Adam",
         learning_rate=0.01,
-        h_layer_size=[15, 10, 64],
+        h_layer_size=[18, 18, 64],
         input_size=18,
         num_class={"reg":1,
                    "class":2},

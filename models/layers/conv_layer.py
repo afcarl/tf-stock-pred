@@ -156,9 +156,8 @@ def depthwise_gated_conv1d(x, filter_size, in_channel, channel_multiply,
         if not batch_norm.apply:
             tf.summary.histogram(vs.name + '_bias_filter', b)
 
-        s._norm_summary(W, vs.name)
-        s._norm_summary(W_t, vs.name)
-
+        s._norm_summary(W, vs.name + '_filter')
+        s._norm_summary(W_t, vs.name + '_gate')
         return tf.multiply(H, T)
 
 

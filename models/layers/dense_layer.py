@@ -76,8 +76,8 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
         if not batch_norm.apply:
             tf.summary.histogram(vs.name + '_bias_filter', b)
 
-        s._norm_summary(W, vs.name)
-        s._norm_summary(W_t, vs.name)
+        s._norm_summary(W, vs.name + '_filter')
+        s._norm_summary(W_t, vs.name + '_gate')
     return tf.concat(layers_output, axis=1)
 
 def highway_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu, init_bias=-3.):
