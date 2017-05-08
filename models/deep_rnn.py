@@ -11,10 +11,6 @@ def deep_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
 
-    # Prepare data shape to match `rnn` function requirements
-    # Current data input shape: (batch_size, n_steps, n_input)
-    # Required shape: 'n_steps' tensors list of shape (batch_size, n_input)
-    # feature = tf.unstack(feature, h_params.sequence_length, 1)
 
     #apply unlinera transformation
     in_size = h_params.input_size
@@ -54,6 +50,7 @@ def deep_rnn(h_params, mode, features_map, target):
             s.add_hidden_layer_summary(states.h, vs.name + "_state")
         else:
             s.add_hidden_layer_summary(states, vs.name + "_state")
+
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],
                                                    num_outputs=h_params.num_class[h_params.e_type],

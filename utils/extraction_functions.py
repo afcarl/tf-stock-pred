@@ -92,3 +92,7 @@ def compute_label(close_time_series):
 
 def compute_moving_average(close_time_series, days):
     return close_time_series.rolling(window=days).mean()
+
+
+def compute_exponential_moving_average(close_time_series, days):
+    return pd.ewma(close_time_series, span=days)

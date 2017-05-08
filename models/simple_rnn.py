@@ -32,10 +32,9 @@ def simple_rnn(h_params, mode, features_map, target):
         # Unstack to get a list of 'n_steps' tensors of shape (batch_size, n_input)
 
         # Define a lstm cell with tensorflow
-        cell = tf.contrib.rnn.LSTMCell(h_params.h_layer_size[-1],
-                                       forget_bias=1.0,
+        cell = tf.contrib.rnn.GRUCell(h_params.h_layer_size[-1],
                                        activation=tf.nn.tanh)
-        # cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
+        cell = tf.contrib.rnn.DropoutWrapper(cell, output_keep_prob=h_params.dropout)
 
         # Get lstm cell output
         outputs, states = tf.contrib.rnn.static_rnn(cell, tf.unstack(features, axis=1),
@@ -44,7 +43,10 @@ def simple_rnn(h_params, mode, features_map, target):
         # for num_step, output in enumerate(outputs):
         #     _add_hidden_layer_summary(output, vs.name+"_{}".format(num_step))
         s.add_hidden_layers_summary(outputs, vs.name + "_output")
-        s.add_hidden_layers_summary(states, vs.name + "state")
+        if isinstance(states, list) or isinstance(states, tuple):
+            s.add_hidden_layer_summary(states.h, vs.name + "_state")
+        else:
+            s.add_hidden_layer_summary(states, vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
         logits = tf.contrib.layers.fully_connected(inputs=outputs[-1],

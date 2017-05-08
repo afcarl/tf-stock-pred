@@ -6,10 +6,26 @@ import utils.func_utils as fu
 
 
 
-def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
-                                activation_fn=tf.nn.elu,
-                                batch_norm=fu.create_BNParams()
-                                ):
+
+
+def gated_res_net_layer(x, in_size, out_size, sequence_length, scope_name,
+                        activation_fn=tf.nn.elu,
+                        batch_norm=fu.create_BNParams()):
+
+    with tf.variable_scope(scope_name) as vs:
+        orig_x = x
+        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm)
+
+        with tf.variable_scope('sub_add'):
+            x += orig_x
+
+
+
+
+def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
+                        activation_fn=tf.nn.elu,
+                        batch_norm=fu.create_BNParams()):
     '''
     Apply a gated liner layer to the input.
     activattion_fn(mul(x,W)) * sigmoid(mul(x,W_t))
@@ -30,12 +46,11 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
         W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
                               initializer=tf.contrib.layers.xavier_initializer_conv2d())
 
-        b_t = tf.get_variable('bias_gate',
-                              shape=[out_size],
-                              initializer=tf.constant_initializer(0.))
-
-
         if not batch_norm.apply:
+            b_t = tf.get_variable('bias_gate',
+                                  shape=[out_size],
+                                  initializer=tf.constant_initializer(0.))
+
             b = tf.get_variable('bias_filter',
                                 shape=[out_size],
                                 initializer=tf.constant_initializer(0.))
@@ -52,12 +67,20 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
                                                  center=batch_norm.center,
                                                  scale=batch_norm.scale,
                                                  is_training=batch_norm.phase,
-                                                 scope=vs.name + '_bn')
+                                                 scope=vs.name + '_filter_bn')
                 H = activation_fn(H_norm, name="activation")
+
+
+                T_norm = tf.contrib.layers.batch_norm(H_linear,
+                                                 center=batch_norm.center,
+                                                 scale=batch_norm.scale,
+                                                 is_training=batch_norm.phase,
+                                                 scope=vs.name + '_gate_bn')
+                T = tf.sigmoid(T_norm, name="transit_gate")
+
             else:
                 H = activation_fn(tf.add(H_linear, b), name="activation")
-
-            T = tf.sigmoid(tf.add(T_linear, b_t), name="transit_gate")
+                T = tf.sigmoid(tf.add(T_linear, b_t), name="transit_gate")
 
 
             layer_output = tf.multiply(H, T)
@@ -72,13 +95,15 @@ def gated_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_nam
 
         tf.summary.histogram(vs.name + "_weight_filter", W)
         tf.summary.histogram(vs.name + '_weight_gate', W_t)
-        tf.summary.histogram(vs.name + '_bias_gate', b_t)
         if not batch_norm.apply:
             tf.summary.histogram(vs.name + '_bias_filter', b)
+            tf.summary.histogram(vs.name + '_bias_gate', b_t)
 
         s._norm_summary(W, vs.name + '_filter')
         s._norm_summary(W_t, vs.name + '_gate')
     return tf.concat(layers_output, axis=1)
+
+
 
 def highway_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu, init_bias=-3.):
     layers_output = []
