@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow import GraphKeys
 from tensorflow.python.ops import nn, init_ops, standard_ops
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
@@ -24,8 +25,9 @@ def gated_res_net_layer(x, in_size, out_size, sequence_length, scope_name,
 
 
 def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
-                        activation_fn=tf.nn.elu,
-                        batch_norm=fu.create_BNParams()):
+                         activation_fn=tf.nn.elu,
+                         batch_norm=fu.create_BNParams(),
+                         is_highway=False):
     '''
     Apply a gated liner layer to the input.
     activattion_fn(mul(x,W)) * sigmoid(mul(x,W_t))
@@ -42,18 +44,22 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
     with tf.variable_scope(scope_name) as vs:
         W = tf.get_variable('weight_filter', shape=[in_size, out_size],
                             initializer=tf.contrib.layers.xavier_initializer(),
-                            regularizer=None)
+                            collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES])
+
         W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
-                              initializer=tf.contrib.layers.xavier_initializer_conv2d())
+                              initializer=tf.contrib.layers.xavier_initializer(),
+                              collections=[GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES])
 
         if not batch_norm.apply:
             b_t = tf.get_variable('bias_gate',
                                   shape=[out_size],
-                                  initializer=tf.constant_initializer(0.))
+                                  initializer=tf.constant_initializer(0.),
+                                  collections=[tf.GraphKeys.BIASES, GraphKeys.GLOBAL_VARIABLES])
 
             b = tf.get_variable('bias_filter',
                                 shape=[out_size],
-                                initializer=tf.constant_initializer(0.))
+                                initializer=tf.constant_initializer(0.),
+                                collections=[tf.GraphKeys.BIASES, GraphKeys.GLOBAL_VARIABLES])
 
 
         # Iterate over the timestamp
@@ -81,9 +87,11 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
                 H = activation_fn(tf.add(H_linear, b), name="activation")
                 T = tf.sigmoid(tf.add(T_linear, b_t), name="transit_gate")
 
-
-            layer_output = tf.multiply(H, T)
-
+            if is_highway:
+                C = 1 - T
+                layer_output = tf.multiply(H, T) + (C * x[:, t, :])
+            else:
+                layer_output = tf.multiply(H, T)
             # apply dropout
             # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
             #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
@@ -100,49 +108,20 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
 
         s._norm_summary(W, vs.name + '_filter')
         s._norm_summary(W_t, vs.name + '_gate')
+
     return tf.concat(layers_output, axis=1)
 
 
 
-def highway_dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name, activation_fn=tf.nn.elu, init_bias=-3.):
-    layers_output = []
+def highway_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
+                                  activation_fn=tf.nn.elu,
+                                  batch_norm=fu.create_BNParams()
+                                  ):
     with tf.variable_scope(scope_name) as vs:
-        W = tf.get_variable('weight_filter', shape=[in_size, out_size],
-                            initializer=tf.contrib.layers.xavier_initializer(),
-                            regularizer=None)
+        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm, is_highway=True)
 
-        b = tf.get_variable('bias_filter', shape=[out_size],
-                            initializer=tf.constant_initializer(0.))
-
-        W_t = tf.get_variable('weight_gate', shape=[in_size, out_size],
-                              initializer=tf.contrib.layers.xavier_initializer_conv2d())
-
-        b_t = tf.get_variable('bias_gate', shape=[out_size],
-                              initializer=tf.constant_initializer(init_bias)
-                              )
-
-        # Iterate over the timestamp
-        for t in range(0, sequence_length):
-
-            H = activation_fn(tf.add(tf.matmul(x[:, t, :], W), b), name="activation")
-            T = tf.sigmoid(tf.add(tf.matmul(x[:, t, :], W_t), b_t), name="transit_gate")
-            C = tf.subtract(1.0, T, name='carry_gate')
-            layer_output = tf.add(tf.multiply(H, T), tf.multiply(x[:, t, :], C))
-            # apply dropout
-            # if h_params.dropout is not None and mode == tf.contrib.learn.ModeKeys.TRAIN:
-            #     layer_output = tf.nn.dropout(layer_output, keep_prob=1 - h_params.dropout)
-
-            layers_output.append(tf.expand_dims(layer_output, 1))  # add again the timestemp dimention to allow concatenation
-        # proved to be the same weights
-        s.add_hidden_layer_summary(layers_output[-1], vs.name)
-
-        tf.summary.histogram(vs.name + "_weight_filter", W)
-        tf.summary.histogram(vs.name + '_bias_filter', b)
-        tf.summary.histogram(vs.name + '_weight_gate', W_t)
-        tf.summary.histogram(vs.name + '_bias_gate', b_t)
-        s._norm_summary(W, vs.name)
-        s._norm_summary(W_t, vs.name)
-    return tf.concat(layers_output, axis=1)
+    return x
 
 # apply linera transformation to reduce the dimension
 
@@ -217,6 +196,13 @@ def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
     return tf.concat(layers_output, axis=1)
 
 
+def dense_layer(x, in_size, out_size, scope,
+                activation_fn=tf.nn.elu):
+
+    dense_layer = Dense(in_size, out_size, scope, activation_fn=activation_fn)
+
+    return dense_layer.call(x)
+
 class Dense(object):
     """Densely-connected layer class.
     This layer implements the operation:
@@ -232,42 +218,42 @@ class Dense(object):
                  activation_fn=tf.nn.relu,
                  weights_initializer=initializers.xavier_initializer,
                  weights_regularizer=None,
-                 bias_initializer=init_ops.zeros_initializer(),
                  normalizer_fn=None,
                ):
 
-        if normalizer_fn and not bias_initializer:
+        if normalizer_fn:
             self.use_bias = False
-        elif not normalizer_fn and bias_initializer:
-            self.use_bias = True
         else:
-            raise Exception("Need bias")
+            self.use_bias = True
 
         self.n_in = n_in
         self.n_out = n_out
         self.activation_fn = activation_fn
 
-        self.W = vs.get_variable('weights',
+        self.W = tf.get_variable('weights',
                                  shape=[self.n_in, self.n_out],
                                  initializer=weights_initializer(),
                                  regularizer=weights_regularizer,
-                                 trainable=True)
+                                 trainable=True,
+                                 collections=[tf.GraphKeys.WEIGHTS, GraphKeys.GLOBAL_VARIABLES])
         if self.use_bias:
-            self.b = vs.get_variable('bias',
+            self.b = tf.get_variable('bias',
                                      shape=[self.n_out, ],
-                                     initializer=bias_initializer(),
-                                     trainable=True)
+                                     initializer=tf.zeros_initializer([self.n_out]),
+                                     trainable=True,
+                                     collections=[tf.GraphKeys.BIASES, GraphKeys.GLOBAL_VARIABLES]
+                                     )
             self.normalizer_fn=None
 
         else:
-            self.bias = None
-            self.normalizer_fn=normalizer_fn
+            self.b = None
+            self.normalizer_fn = normalizer_fn
 
     def call(self, inputs):
         outputs = standard_ops.matmul(inputs, self.W)
 
         if self.use_bias:
-            outputs = nn.bias_add(outputs, self.bias)
+            outputs = nn.bias_add(outputs, self.b)
 
         # Apply normalizer function / layer.
         if self.normalizer_fn is not None:

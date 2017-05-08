@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib.learn.python.learn.estimators import model_fn as model_fn_lib
-import utils.eval_metric as eval_m
+import utils.func_utils as fu
 
 def create_train_op(loss, hparams):
     '''
@@ -13,7 +13,7 @@ def create_train_op(loss, hparams):
         loss=loss,                                          # loss function used
         global_step=tf.contrib.framework.get_global_step(), # number of batches seen so far
         learning_rate=hparams.learning_rate,                # learning rate
-        clip_gradients=5.0,                                # clip gradient to a max value
+        clip_gradients=2.0,                                # clip gradient to a max value
         optimizer=hparams.optimizer)                        # optimizer used
     return train_op
 
@@ -34,6 +34,21 @@ def create_model_fn(hparams, model_impl):
                 mode,
                 features_map,
                 targets)
+
+            if hparams.l1_reg > 0. or hparams.l2_reg > 0.:
+                # apply regularization
+                with tf.variable_scope("reg") as vs:
+                    all_regularize = []
+                    if hparams.l1_reg > 0.:
+                        all_regularize.append(tf.contrib.layers.l1_regularizer(hparams.l1_reg))
+                    if hparams.l2_reg > 0.:
+                        all_regularize.append(tf.contrib.layers.l2_regularizer(hparams.l2_reg))
+
+                    regularizer = fu.sum_regularizer(all_regularize, scope=vs)
+                    regularization_penalty = tf.contrib.layers.apply_regularization(regularizer)
+
+                    loss += regularization_penalty
+
             train_op = create_train_op(loss, hparams)
 
             return model_fn_lib.ModelFnOps(
