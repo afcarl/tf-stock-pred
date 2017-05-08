@@ -71,6 +71,7 @@ def create_example_sequencial(row, keys):
     """
     features = np.array(row).reshape(h_params.sequence_length, len(keys)+1)[::-1]
     example = tf.train.Example()
+    assert features.shape[0] == h_params.sequence_length
     example.features.feature["length"].int64_list.value.append(features.shape[0])
 
     for idx, key in enumerate(keys):
