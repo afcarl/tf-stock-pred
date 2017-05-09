@@ -36,7 +36,7 @@ def create_hparams():
         num_class={"reg":1,
                    "class":2},
         dropout=0.5,
-        l1_reg=0.00,
+        l1_reg=0.005,
         l2_reg=0.00,
         one_by_one_out_filters=5,
         one_by_all_out_filters=3,

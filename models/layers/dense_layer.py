@@ -15,7 +15,7 @@ def gated_res_net_layer(x, in_size, out_size, sequence_length, scope_name,
     orig_x = x
 
     with tf.variable_scope(scope_name) as vs:
-        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = dense_layer_over_time(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
         x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm)
 
     with tf.variable_scope('sub_add'):
