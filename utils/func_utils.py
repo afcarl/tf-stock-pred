@@ -2,7 +2,9 @@ import tensorflow as tf
 from collections import namedtuple
 from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops
-
+import csv
+import os
+import pandas as pd
 
 BNParams = namedtuple(
     "BNParams",
@@ -109,3 +111,23 @@ def apply_regularization(regularizer, weights_list=None):
         summed_penalty = math_ops.add_n(penalties, name=scope)
         ops.add_to_collection(ops.GraphKeys.REGULARIZATION_LOSSES, summed_penalty)
         return summed_penalty
+
+
+def export_to_csv(file_name, data_dic, path='./data'):
+    """
+    export the data dictionary to a csv file
+    :param file_name: 
+    :param data_dic: 
+    :param path: 
+    :return: 
+    """
+    data_frame = pd.DataFrame(data_dic)
+    full_path = os.path.join(path, file_name) + '.csv'
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, 'w') as f:  # Just use 'w' mode in 3.x
+        w = csv.DictWriter(f, data_dic.keys())
+        w.writeheader()
+        for row in data_dic.items():
+            w.writerow(row)
+
+

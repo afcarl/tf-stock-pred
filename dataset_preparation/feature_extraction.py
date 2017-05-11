@@ -6,7 +6,7 @@ import net_hparams
 import numpy as np
 
 COMPANY_NAME = 'apple'
-RETUNR_FN = lambda x:x
+RETUNR_FN = ef.compute_return
 
 def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''

@@ -25,7 +25,7 @@ def deep_rnn(h_params, mode, features_map, target):
         #                                              activation_fn=tf.nn.elu,
         #                                              batch_norm=batch_norm_data)
 
-        filtered = dense_layer.gated_dense_layer_ot(filtered, in_size, h_layer_dim,
+        filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
                                                      sequence_length=h_params.sequence_length,
                                                      scope_name='gated_dense_{}'.format(layer_idx),
                                                      activation_fn=leaky_relu,
