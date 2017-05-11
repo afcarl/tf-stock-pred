@@ -40,41 +40,44 @@ tf.logging.set_verbosity(FLAGS.loglevel)
 
 def main(unused_argv):
     hparams = net_hparams.create_hparams()
+    for h_layer in ["gated_dense_layer_ot", "gated_res_net_layer", "highway_dense_layer_ot"]:
+        hparams.hidden_layer_type = h_layer
 
-    model_impl = eval(hparams.model_type)
 
-    model_fn = model.create_model_fn(
-        hparams,
-        model_impl=model_impl)
+        model_impl = eval(hparams.model_type)
 
-    estimator = tf.contrib.learn.Estimator(
-        model_fn=model_fn,
-        model_dir=MODEL_DIR,
-        config=tf.contrib.learn.RunConfig(save_checkpoints_secs=320))
+        model_fn = model.create_model_fn(
+            hparams,
+            model_impl=model_impl)
 
-    input_fn_train = data_set.create_input_fn(
-        mode=tf.contrib.learn.ModeKeys.TRAIN,
-        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type), VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
-        batch_size=hparams.batch_size,
-        num_epochs=FLAGS.num_epochs,
-        h_params=hparams
-    )
+        estimator = tf.contrib.learn.Estimator(
+            model_fn=model_fn,
+            model_dir=MODEL_DIR,
+            config=tf.contrib.learn.RunConfig(save_checkpoints_secs=320))
 
-    input_fn_eval = data_set.create_input_fn(
-        mode=tf.contrib.learn.ModeKeys.EVAL,
-        input_files=[VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
-        batch_size=hparams.eval_batch_size,
-        num_epochs=1,
-        h_params=hparams)
+        input_fn_train = data_set.create_input_fn(
+            mode=tf.contrib.learn.ModeKeys.TRAIN,
+            input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type), VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
+            batch_size=hparams.batch_size,
+            num_epochs=FLAGS.num_epochs,
+            h_params=hparams
+        )
 
-    eval_metrics = create_evaluation_metrics(hparams.e_type)
+        input_fn_eval = data_set.create_input_fn(
+            mode=tf.contrib.learn.ModeKeys.EVAL,
+            input_files=[VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
+            batch_size=hparams.eval_batch_size,
+            num_epochs=1,
+            h_params=hparams)
 
-    eval_monitor = tf.contrib.learn.monitors.ValidationMonitor(
-        input_fn=input_fn_eval,
-        every_n_steps=FLAGS.eval_every,
-        metrics=eval_metrics)
+        eval_metrics = create_evaluation_metrics(hparams.e_type)
 
-    estimator.fit(input_fn=input_fn_train, steps=10**5, monitors=[eval_monitor])
+        eval_monitor = tf.contrib.learn.monitors.ValidationMonitor(
+            input_fn=input_fn_eval,
+            every_n_steps=FLAGS.eval_every,
+            metrics=eval_metrics)
+
+        estimator.fit(input_fn=input_fn_train, steps=10**5, monitors=[eval_monitor])
 
 
 if __name__ == "__main__":
