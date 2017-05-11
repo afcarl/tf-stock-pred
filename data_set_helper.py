@@ -50,16 +50,25 @@ def create_input_fn(mode, input_files, batch_size, num_epochs, h_params):
         #         "read_batch_features_eval/file_name_queue/limit_epochs/epochs",
         #         initializer=tf.constant(0, dtype=tf.int64))
 
+
         target = feature_map.pop("label")
         if "rnn" in h_params.model_type:
             length = tf.squeeze(feature_map.pop("length"))
             features = tf.concat([tf.expand_dims(feature_map[k], 2)for k in feature_map], axis=2)
-            return {'features':features, 'length':length}, target[:, -1]
+            return rnn_return_fn(mode, features, length, target)
         else:
             target = tf.squeeze(target, 1)
             return feature_map, target
 
     return input_fn
+
+
+def rnn_return_fn(mode, features, length, target):
+    if mode == tf.contrib.learn.ModeKeys.INFER:
+        return {'features':features, 'length':length, 'targets':target[:, -1]}
+    else:
+        return {'features': features, 'length': length}, target[:, -1]
+
 
 
 if __name__ == '__main__':

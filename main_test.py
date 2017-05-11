@@ -16,7 +16,7 @@ from models.depthwise_cnn_rnn import dw_cnn_rnn
 from utils.eval_metric import create_evaluation_metrics
 
 tf.flags.DEFINE_integer("loglevel", 20, "Tensorflow log level")
-tf.flags.DEFINE_string("model_dir", 'runs_1492760149', "Directory to load model checkpoints from")
+tf.flags.DEFINE_string("model_dir", 'debug/runs_1494302760', "Directory to load model checkpoints from")
 tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
 FLAGS = tf.flags.FLAGS
 
@@ -57,7 +57,7 @@ def main(unused_argv):
         h_params=hparams)
 
 
-    ev = estimator.evaluate(input_fn=input_fn_test, steps=None)
+    ev = estimator.predict(input_fn=input_fn_test)
     for idx_row, row in enumerate(ev):
         print("idx_row {}\t\tprediction {}\t\ttarget {}".format(idx_row, row['predictions'], row['targets']))
 

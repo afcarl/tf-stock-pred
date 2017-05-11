@@ -54,7 +54,7 @@ def main(unused_argv):
 
     input_fn_train = data_set.create_input_fn(
         mode=tf.contrib.learn.ModeKeys.TRAIN,
-        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
+        input_files=[TRAIN_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type), VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
         batch_size=hparams.batch_size,
         num_epochs=FLAGS.num_epochs,
         h_params=hparams
@@ -67,13 +67,6 @@ def main(unused_argv):
         num_epochs=1,
         h_params=hparams)
 
-    input_fn_infer = data_set.create_input_fn(
-        mode=tf.contrib.learn.ModeKeys.INFER,
-        input_files=[VALIDATION_FILE.format(OUTPUT_NAME_SUFFIX, hparams.e_type)],
-        batch_size=hparams.eval_batch_size,
-        num_epochs=1,
-        h_params=hparams)
-
     eval_metrics = create_evaluation_metrics(hparams.e_type)
 
     eval_monitor = tf.contrib.learn.monitors.ValidationMonitor(
@@ -81,12 +74,7 @@ def main(unused_argv):
         every_n_steps=FLAGS.eval_every,
         metrics=eval_metrics)
 
-    estimator.fit(input_fn=input_fn_train, steps=None, monitors=[eval_monitor])
-
-    # ev = estimator.predict(input_fn=input_fn_infer)
-    # for idx_row, row in enumerate(ev):
-    #     print("idx_row {}\t\tprediction {}\t\ttarget {}".format(idx_row, row['predictions'], row['targets']))
-
+    estimator.fit(input_fn=input_fn_train, steps=10**6, monitors=[eval_monitor])
 
 
 if __name__ == "__main__":

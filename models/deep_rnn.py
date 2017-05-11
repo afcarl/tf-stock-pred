@@ -62,5 +62,8 @@ def deep_rnn(h_params, mode, features_map, target):
 
         predictions, losses = output_layer.losses(logits, target, mode=mode, h_params=h_params)
 
+        if mode == tf.contrib.learn.ModeKeys.INFER:
+            return predictions, None
+
     mean_loss = tf.reduce_mean(losses, name='mean_loss')
     return predictions, mean_loss

@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
-
+from models.layers import output_layer
 import utils.summarizer as s
 
 
@@ -88,18 +88,11 @@ def h_cnn_rnn(h_params, mode, features_map, target):
                                                    activation_fn=None,
                                                    scope=vs)
         s.add_hidden_layer_summary(logits, vs.name)
-        predictions = tf.argmax(tf.nn.softmax(logits), 1)
 
+        predictions, losses = output_layer.losses(logits, target, mode=mode, h_params=h_params)
 
         if mode == tf.contrib.learn.ModeKeys.INFER:
-            return predictions, Noneh_params.num_class
-
-        elif mode == tf.contrib.learn.ModeKeys.TRAIN:
-            t_accuracy = tf.contrib.metrics.streaming_accuracy(predictions, target)
-            tf.summary.scalar('train_accuracy', tf.reduce_mean(t_accuracy))
-
-        # Calculate the binary cross-entropy loss
-        losses = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=target, name='entropy')
+            return predictions, None
 
     mean_loss = tf.reduce_mean(losses, name='mean_loss')
     return predictions, mean_loss
