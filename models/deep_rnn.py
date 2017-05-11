@@ -46,11 +46,11 @@ def deep_rnn(h_params, mode, features_map, target):
             s.add_hidden_layer_summary(states, vs.name + "_state")
 
     with tf.variable_scope('logits') as vs:
-        logits = dense_layer.dense_layer(x=outputs[-1],
-                                         in_size=h_params.h_layer_size[-1],
-                                         out_size=h_params.num_class[h_params.e_type],
-                                         scope=vs,
-                                         activation_fn=None)
+        logits = dense_layer(x=outputs[-1],
+                             in_size=h_params.h_layer_size[-1],
+                             out_size=h_params.num_class[h_params.e_type],
+                             scope=vs,
+                             activation_fn=None)
 
         s.add_hidden_layer_summary(logits, vs.name)
 

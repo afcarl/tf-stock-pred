@@ -8,9 +8,7 @@ OUTPUT_DIR = "./data"
 
 
 COMPANY_NAME = "apple"
-EXAMPLE_FN_NAME = "create_example_sequencial"
-OUTPUT_NAME_SUFFIX = 'seq'
-RETUNR_T = 'relative'
+RETUNR_T = 'relative'       # relative or raw
 
 fe.run(COMPANY_NAME, return_ty=RETUNR_T, path=INPUT_DIR)
-de.run(COMPANY_NAME, EXAMPLE_FN_NAME, OUTPUT_NAME_SUFFIX, in_path=INPUT_DIR, out_path=OUTPUT_DIR)
+de.run(COMPANY_NAME, in_path=INPUT_DIR, out_path=OUTPUT_DIR)

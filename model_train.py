@@ -21,8 +21,7 @@ tf.flags.DEFINE_integer("eval_every", 50, "Evaluate after this many train steps"
 tf.flags.DEFINE_string("input_dir", './data', "Evaluate after this many train steps")
 FLAGS = tf.flags.FLAGS
 
-TIMESTAMP = int(time.time())
-MODEL_DIR = os.path.abspath("./debug/runs_" + str(TIMESTAMP))
+MODEL_DIR = os.path.abspath("./debug/runs_{}")
 
 
 COMPANY_NAME = 'apple'
@@ -39,9 +38,9 @@ tf.logging.set_verbosity(FLAGS.loglevel)
 
 
 def main(unused_argv):
-    hparams = net_hparams.create_hparams()
     for h_layer in ["gated_dense_layer_ot", "gated_res_net_layer_ot", "highway_dense_layer_ot"]:
-        hparams.hidden_layer_type = h_layer
+        TIMESTAMP = int(time.time())
+        hparams = net_hparams.create_hparams(hidden_layer_type=h_layer)
 
 
         model_impl = eval(hparams.model_type)
@@ -52,7 +51,7 @@ def main(unused_argv):
 
         estimator = tf.contrib.learn.Estimator(
             model_fn=model_fn,
-            model_dir=MODEL_DIR,
+            model_dir=MODEL_DIR.format(TIMESTAMP),
             config=tf.contrib.learn.RunConfig(save_checkpoints_secs=320))
 
         input_fn_train = data_set.create_input_fn(
