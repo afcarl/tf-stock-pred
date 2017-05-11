@@ -11,7 +11,7 @@ from sklearn.model_selection import train_test_split
 
 # KEYS=['Open', 'High', 'Low', 'Close', 'Volume', 'A/D', 'Adj_Open', 'Adj_High','Adj_Low', 'Adj_Close', 'Adj_Volume', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
 # KEYS=['DEXUSAL', 'MA_long', 'MA_short', 'MA_medium', 'MACD_long', 'MACD_short', 'PPO_long', 'PPO_short']
-h_params = net_hparams.create_hparams()
+h_params = net_hparams.create_fparams()
 
 INPUT_DIR = "../data/stock"
 OUTPUT_DIR = "../data"

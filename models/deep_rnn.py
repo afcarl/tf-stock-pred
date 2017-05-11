@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.contrib.layers.python.layers import initializers
 import utils.summarizer as s
 import models.layers.output_layer as output_layer
-import models.layers.dense_layer as dense_layer
+from models.layers.dense_layer import *
 import utils.func_utils as fu
 from utils.func_utils import leaky_relu
 
@@ -10,7 +10,7 @@ from utils.func_utils import leaky_relu
 def deep_rnn(h_params, mode, features_map, target):
     features = features_map['features']
     sequence_length = features_map['length']
-
+    hidden_layer = eval(h_params.hidden_layer_type)
 
     #apply unlinera transformation
     in_size = h_params.input_size
@@ -19,17 +19,11 @@ def deep_rnn(h_params, mode, features_map, target):
                                          phase=fu.is_training(mode))
 
     for layer_idx, h_layer_dim in enumerate(h_params.h_layer_size[:-1]):
-        # filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
-        #                                              sequence_length=h_params.sequence_length,
-        #                                              scope_name='dense_{}'.format(layer_idx),
-        #                                              activation_fn=tf.nn.elu,
-        #                                              batch_norm=batch_norm_data)
-
-        filtered = dense_layer.dense_layer_over_time(filtered, in_size, h_layer_dim,
-                                                     sequence_length=h_params.sequence_length,
-                                                     scope_name='gated_dense_{}'.format(layer_idx),
-                                                     activation_fn=leaky_relu,
-                                                     batch_norm=batch_norm_data)
+        filtered = hidden_layer(filtered, in_size, h_layer_dim,
+                                sequence_length=h_params.sequence_length,
+                                scope_name='gated_dense_{}'.format(layer_idx),
+                                activation_fn=leaky_relu,
+                                batch_norm=batch_norm_data)
         in_size = h_layer_dim
 
     with tf.variable_scope('rnn') as vs:

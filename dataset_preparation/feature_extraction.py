@@ -6,7 +6,7 @@ import net_hparams
 import numpy as np
 
 COMPANY_NAME = 'apple'
-RETUNR_FN = ef.compute_return
+RETUNR_T = 'relative'
 
 def compute_label(close_time_serie, experiment_type, return_fn=lambda x:x):
     '''
@@ -47,10 +47,10 @@ def compute_moving_average(close_time_serie, long_term=100, medium_term=26, shor
     return long_moving_average, medium_moving_average, short_moving_average, long_MACD, short_MACD, long_PPO, short_PPO, sl
 
 
-def run(company_name, path='../data/stock', return_fn=ef.compute_return):
+def run(company_name, return_ty, path='../data/stock'):
     primary_key = 'Close'
-    h_params = net_hparams.create_hparams()
-
+    h_params = net_hparams.create_fparams()
+    return_fn = h_params.return_type[return_ty]
 
     full_path = os.path.join(path, company_name) + '.csv'
     data = pd.read_csv(full_path, parse_dates=True, index_col=0)
@@ -120,5 +120,5 @@ if __name__ == '__main__':
     # companies = ['apple', 'bank_of_america', 'cantel_medical_corp', 'capital_city_bank', 'goldman', 'google',
     #              'ICU_medical', 'sunTrust_banks', 'wright_medical_group', 'yahoo', 'IBM_short']
 
-    run(COMPANY_NAME, return_fn=RETUNR_FN)
+    run(COMPANY_NAME, RETUNR_T)
 
