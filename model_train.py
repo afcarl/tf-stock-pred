@@ -40,7 +40,7 @@ tf.logging.set_verbosity(FLAGS.loglevel)
 
 def main(unused_argv):
     hparams = net_hparams.create_hparams()
-    for h_layer in ["gated_dense_layer_ot", "gated_res_net_layer", "highway_dense_layer_ot"]:
+    for h_layer in ["gated_dense_layer_ot", "gated_res_net_layer_ot", "highway_dense_layer_ot"]:
         hparams.hidden_layer_type = h_layer
 
 

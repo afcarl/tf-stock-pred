@@ -8,14 +8,24 @@ import utils.func_utils as fu
 
 
 
+def highway_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
+                                  activation_fn=tf.nn.elu,
+                                  batch_norm=fu.create_BNParams()
+                                  ):
+    with tf.variable_scope(scope_name) as vs:
+        x = dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm, is_highway=True)
 
-def gated_res_net_layer(x, in_size, out_size, sequence_length, scope_name,
+    return x
+
+
+def gated_res_net_layer_ot(x, in_size, out_size, sequence_length, scope_name,
                         activation_fn=tf.nn.elu,
                         batch_norm=fu.create_BNParams()):
     orig_x = x
 
     with tf.variable_scope(scope_name) as vs:
-        x = dense_layer_over_time(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
+        x = dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
         x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm)
 
     with tf.variable_scope('sub_add'):
@@ -115,19 +125,9 @@ def gated_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
 
 
 
-def highway_dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
-                                  activation_fn=tf.nn.elu,
-                                  batch_norm=fu.create_BNParams()
-                                  ):
-    with tf.variable_scope(scope_name) as vs:
-        x = dense_layer_over_time(x, in_size, out_size, sequence_length, 'sub_1', activation_fn, batch_norm)
-        x = gated_dense_layer_ot(x, in_size, out_size, sequence_length, 'sub_2', activation_fn, batch_norm, is_highway=True)
-
-    return x
 
 
-
-def dense_layer_over_time(x, in_size, out_size, sequence_length, scope_name,
+def dense_layer_ot(x, in_size, out_size, sequence_length, scope_name,
                           activation_fn=tf.nn.elu,
                           batch_norm=fu.create_BNParams()
                           ):
